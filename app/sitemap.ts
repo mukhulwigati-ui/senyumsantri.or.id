@@ -1,64 +1,294 @@
 // app/sitemap.ts
-import { MetadataRoute } from 'next';
 
-// Sesuaikan URL domain utama Pondok Pesantren Asyiq
-const BASE_URL = 'https://www.asyiq.ponpes.id';
+import type { MetadataRoute } from 'next';
+import { createClient } from 'next-sanity';
+
+// ============================================================================
+// SITE CONFIG
+// ============================================================================
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id'
+).replace(/\/+$/, '');
+
+// ============================================================================
+// SANITY CONFIG
+// ============================================================================
+
+const SANITY_PROJECT_ID =
+  process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim() ||
+  'lsnco71s';
+
+const SANITY_DATASET =
+  process.env.NEXT_PUBLIC_SANITY_DATASET?.trim() ||
+  'production';
+
+const sanityClient = createClient({
+  projectId: SANITY_PROJECT_ID,
+  dataset: SANITY_DATASET,
+  apiVersion: '2026-09-26',
+  useCdn: false,
+});
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type SitemapContentItem = {
+  slug?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+};
+
+// ============================================================================
+// REVALIDATE
+// ============================================================================
+//
+// Sitemap diperbarui secara berkala.
+//
+// Tidak perlu force-dynamic setiap request karena sitemap bukan halaman
+// transaksi. Satu jam sudah cukup untuk memberitahu mesin pencari tentang
+// konten terbaru.
+// ============================================================================
+
+export const revalidate = 3600;
+
+// ============================================================================
+// HELPER
+// ============================================================================
+
+function safeDate(
+  value?: string,
+  fallback: Date = new Date()
+): Date {
+  if (!value) {
+    return fallback;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  return date;
+}
+
+// ============================================================================
+// SITEMAP
+// ============================================================================
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  
-  // 1. Rute Statis Utama (Halaman yang kodenya tertulis manual di proyek)
+  const now = new Date();
+
+  // ==========================================================================
+  // 1. HALAMAN STATIS
+  // ==========================================================================
+
   const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: BASE_URL,
-      lastModified: new Date(),
+      url: SITE_URL,
+      lastModified: now,
       changeFrequency: 'daily',
-      priority: 1.0, // Prioritas tertinggi untuk Homepage
+      priority: 1,
     },
+
     {
-      url: `${BASE_URL}/blog`,
-      lastModified: new Date(),
+      url: `${SITE_URL}/program`,
+      lastModified: now,
       changeFrequency: 'daily',
+      priority: 0.9,
+    },
+
+    {
+      url: `${SITE_URL}/blog`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+
+    {
+      url: `${SITE_URL}/tentang-kami`,
+      lastModified: now,
+      changeFrequency: 'monthly',
       priority: 0.8,
+    },
+
+    {
+      url: `${SITE_URL}/kontak`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+
+    {
+      url: `${SITE_URL}/bantuan`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    {
+      url: `${SITE_URL}/kebijakan-privasi`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.4,
+    },
+
+    {
+      url: `${SITE_URL}/syarat-ketentuan`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.4,
+    },
+
+    {
+      url: `${SITE_URL}/peta-situs`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.5,
     },
   ];
 
+  // ==========================================================================
+  // 2. PROGRAM / CAMPAIGN
+  // ==========================================================================
+
   let campaignRoutes: MetadataRoute.Sitemap = [];
+
+  try {
+    const programs =
+      await sanityClient.fetch<SitemapContentItem[]>(
+        `
+          *[
+            (_type == "program" || _type == "campaign") &&
+            defined(slug.current)
+          ]
+          | order(_updatedAt desc)
+          {
+            "slug": slug.current,
+            "updatedAt": _updatedAt
+          }
+        `
+      );
+
+    if (Array.isArray(programs)) {
+      campaignRoutes = programs
+        .filter(
+          (program) =>
+            typeof program?.slug === 'string' &&
+            program.slug.trim().length > 0
+        )
+        .map((program) => ({
+          // ================================================================
+          // PENTING:
+          // Detail program proyek ini berada di:
+          //
+          // app/campaign/[slug]/page.tsx
+          //
+          // BUKAN /program/[slug]
+          // ================================================================
+
+          url: `${SITE_URL}/campaign/${encodeURIComponent(
+            program.slug!.trim()
+          )}`,
+
+          lastModified: safeDate(
+            program.updatedAt,
+            now
+          ),
+
+          changeFrequency: 'daily' as const,
+
+          priority: 0.8,
+        }));
+    }
+  } catch (error) {
+    console.error(
+      '[Sitemap] Gagal mengambil program dari Sanity:',
+      error
+    );
+  }
+
+  // ==========================================================================
+  // 3. BERITA / BLOG
+  // ==========================================================================
+
   let blogRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    // 2. Fetch Rute Dinamis untuk Seluruh Program Pesantren / Galang Dana
-    const resPrograms = await fetch(`${BASE_URL}/api/programs`, { cache: 'no-store' });
-    const jsonPrograms = await resPrograms.json();
-    
-    if (jsonPrograms.success && Array.isArray(jsonPrograms.data)) {
-      campaignRoutes = jsonPrograms.data.map((program: any) => ({
-        url: `${BASE_URL}/program/${program.slug}`,
-        lastModified: new Date(), // Idealnya menggunakan field updated/_updatedAt dari Sanity
-        changeFrequency: 'hourly', // Diubah per jam karena data/donasi dinamis berganti
-        priority: 0.9,
-      }));
+    const articles =
+      await sanityClient.fetch<SitemapContentItem[]>(
+        `
+          *[
+            _type == "news" &&
+            defined(slug.current)
+          ]
+          | order(
+              coalesce(publishedAt, _createdAt) desc
+            )
+          {
+            "slug": slug.current,
+            "publishedAt": publishedAt,
+            "updatedAt": _updatedAt
+          }
+        `
+      );
+
+    if (Array.isArray(articles)) {
+      blogRoutes = articles
+        .filter(
+          (article) =>
+            typeof article?.slug === 'string' &&
+            article.slug.trim().length > 0
+        )
+        .map((article) => ({
+          url: `${SITE_URL}/blog/${encodeURIComponent(
+            article.slug!.trim()
+          )}`,
+
+          lastModified: safeDate(
+            article.updatedAt ||
+              article.publishedAt,
+            now
+          ),
+
+          changeFrequency: 'weekly' as const,
+
+          priority: 0.7,
+        }));
     }
   } catch (error) {
-    console.error('Failed to fetch programs for sitemap:', error);
+    console.error(
+      '[Sitemap] Gagal mengambil berita dari Sanity:',
+      error
+    );
   }
 
-  try {
-    // 3. Fetch Rute Dinamis untuk Seluruh Kabar Berita/Blog Pesantren
-    const resNews = await fetch(`${BASE_URL}/api/news`, { cache: 'no-store' });
-    const jsonNews = await resNews.json();
-    
-    if (jsonNews.success && Array.isArray(jsonNews.data)) {
-      blogRoutes = jsonNews.data.map((article: any) => ({
-        url: `${BASE_URL}/blog/${article.slug}`,
-        lastModified: article.publishedAt ? new Date(article.publishedAt) : new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.7,
-      }));
-    }
-  } catch (error) {
-    console.error('Failed to fetch news for sitemap:', error);
-  }
+  // ==========================================================================
+  // 4. HAPUS URL DUPLIKAT
+  // ==========================================================================
 
-  // 4. Gabungkan semua rute menjadi satu kesatuan sitemap utuh
-  return [...staticRoutes, ...campaignRoutes, ...blogRoutes];
+  const combinedRoutes: MetadataRoute.Sitemap = [
+    ...staticRoutes,
+    ...campaignRoutes,
+    ...blogRoutes,
+  ];
+
+  const uniqueRoutes =
+    Array.from(
+      new Map(
+        combinedRoutes.map((route) => [
+          route.url,
+          route,
+        ])
+      ).values()
+    );
+
+  // ==========================================================================
+  // 5. RETURN
+  // ==========================================================================
+
+  return uniqueRoutes;
 }

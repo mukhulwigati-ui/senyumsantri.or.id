@@ -1,19 +1,73 @@
 // app/api/views/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import {
+  NextRequest,
+  NextResponse,
+} from 'next/server';
 
-export const dynamic = 'force-dynamic';
+import {
+  getSupabaseAdmin,
+} from '@/lib/supabase/admin';
+
+// ============================================================================
+// ROUTE CONFIG
+// ============================================================================
+
+export const dynamic =
+  'force-dynamic';
+
+export const revalidate =
+  0;
+
+// ============================================================================
+// SITE CONFIG
+// ============================================================================
+
+const SITE_NAME =
+  'senyumsantri.or.id';
 
 // ============================================================================
 // TYPES
 // ============================================================================
+//
+// "blog" tetap diterima untuk kompatibilitas kode lama.
+//
+// Di database:
+//
+// blog -> news
+//
+// ============================================================================
 
-type ContentType =
+type RequestContentType =
   | 'blog'
+  | 'news'
   | 'campaign'
   | 'fundraiser';
+
+type DatabaseContentType =
+  | 'news'
+  | 'campaign'
+  | 'fundraiser';
+
+type ViewRequestBody = {
+  type?: unknown;
+  key?: unknown;
+};
+
+// ============================================================================
+// RESPONSE HEADERS
+// ============================================================================
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control':
+    'no-store, no-cache, must-revalidate, max-age=0',
+
+  Pragma:
+    'no-cache',
+
+  Expires:
+    '0',
+};
 
 // ============================================================================
 // VALIDATOR
@@ -21,92 +75,221 @@ type ContentType =
 
 function isValidType(
   value: unknown
-): value is ContentType {
+): value is RequestContentType {
   return (
     value === 'blog' ||
+    value === 'news' ||
     value === 'campaign' ||
     value === 'fundraiser'
   );
 }
 
+// ============================================================================
+// NORMALIZE TYPE
+// ============================================================================
+//
+// SQL Supabase memakai:
+//
+// news
+// campaign
+// fundraiser
+//
+// Tetapi beberapa komponen lama kemungkinan masih mengirim:
+//
+// blog
+//
+// Karena itu "blog" kita ubah menjadi "news".
+//
+// ============================================================================
+
+function normalizeType(
+  type: RequestContentType
+): DatabaseContentType {
+  if (type === 'blog') {
+    return 'news';
+  }
+
+  return type;
+}
+
+// ============================================================================
+// VALIDATE KEY
+// ============================================================================
+
 function isValidKey(
   value: unknown
 ): value is string {
+  if (
+    typeof value !== 'string'
+  ) {
+    return false;
+  }
+
+  const cleanValue =
+    value.trim();
+
   return (
-    typeof value === 'string' &&
-    value.trim().length > 0 &&
-    value.trim().length <= 300
+    cleanValue.length > 0 &&
+    cleanValue.length <= 300
   );
+}
+
+// ============================================================================
+// NORMALIZE KEY
+// ============================================================================
+
+function normalizeKey(
+  value: string
+): string {
+  return value
+    .trim()
+    .slice(0, 300);
+}
+
+// ============================================================================
+// NORMALIZE VIEW COUNT
+// ============================================================================
+
+function normalizeViewCount(
+  value: unknown
+): number {
+  if (
+    typeof value === 'number' &&
+    Number.isFinite(value)
+  ) {
+    return Math.max(
+      0,
+      Math.trunc(value)
+    );
+  }
+
+  if (
+    typeof value === 'string'
+  ) {
+    const parsed =
+      Number(value);
+
+    if (
+      Number.isFinite(parsed)
+    ) {
+      return Math.max(
+        0,
+        Math.trunc(parsed)
+      );
+    }
+  }
+
+  return 0;
 }
 
 // ============================================================================
 // BOT DETECTOR
 // ============================================================================
+//
+// Preview WhatsApp, Facebook, Telegram, Googlebot, dan crawler lainnya
+// TIDAK menambah jumlah views.
+//
+// ============================================================================
 
-function isBot(userAgent: string) {
-  return /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegrambot|discordbot|twitterbot|linkedinbot|pinterest|preview/i.test(
+function isBot(
+  userAgent: string
+): boolean {
+  if (!userAgent) {
+    return false;
+  }
+
+  return /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|discordbot|twitterbot|linkedinbot|pinterest|preview|googleother|google-inspectiontool|googlebot|bingbot|yandexbot|duckduckbot|baiduspider|semrushbot|ahrefsbot|mj12bot|petalbot|bytespider/i.test(
     userAgent
   );
 }
 
 // ============================================================================
-// GET CLIENT IP
+// GET SUPABASE OR RESPONSE
+// ============================================================================
+//
+// Supabase dibuat lazy melalui getSupabaseAdmin().
+//
+// Ini penting agar Next.js tidak gagal pada tahap:
+//
+// Collecting page data
+//
+// ketika module route di-import.
+//
 // ============================================================================
 
-function getClientIp(
-  request: NextRequest
-) {
-  const forwarded =
-    request.headers.get(
-      'x-forwarded-for'
-    );
-
-  if (forwarded) {
-    return (
-      forwarded
-        .split(',')[0]
-        ?.trim() || 'unknown'
-    );
-  }
-
-  return (
-    request.headers.get(
-      'x-real-ip'
-    ) || 'unknown'
-  );
+function getSupabase() {
+  return getSupabaseAdmin();
 }
 
 // ============================================================================
-// VIEWER HASH
+// GET CURRENT VIEWS
 // ============================================================================
 
-function createViewerHash(
-  request: NextRequest
-) {
-  const ip =
-    getClientIp(request);
+async function getCurrentViews(
+  type: DatabaseContentType,
+  key: string
+): Promise<{
+  views: number;
+  error: unknown | null;
+}> {
+  const supabase =
+    getSupabase();
 
-  const userAgent =
-    request.headers.get(
-      'user-agent'
-    ) || 'unknown';
+  if (!supabase) {
+    return {
+      views: 0,
 
-  const secret =
-    process.env.VIEW_HASH_SECRET ||
-    'asyiqul-quran-view-secret';
+      error:
+        new Error(
+          'Supabase Admin belum dikonfigurasi.'
+        ),
+    };
+  }
 
-  return createHash('sha256')
-    .update(
-      `${ip}|${userAgent}|${secret}`
-    )
-    .digest('hex');
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from('content_views')
+      .select('views')
+      .eq(
+        'content_type',
+        type
+      )
+      .eq(
+        'content_key',
+        key
+      )
+      .maybeSingle();
+
+  if (error) {
+    return {
+      views: 0,
+      error,
+    };
+  }
+
+  return {
+    views:
+      normalizeViewCount(
+        data?.views
+      ),
+
+    error:
+      null,
+  };
 }
 
 // ============================================================================
 // GET
 // ============================================================================
 //
-// GET:
+// Contoh:
+//
+// /api/views?type=news&key=judul-artikel
+//
+// atau kompatibilitas lama:
 //
 // /api/views?type=blog&key=judul-artikel
 //
@@ -116,84 +299,204 @@ export async function GET(
   request: NextRequest
 ) {
   try {
-    const { searchParams } =
-      new URL(request.url);
+    // ========================================================================
+    // QUERY PARAMS
+    // ========================================================================
 
-    const type =
-      searchParams.get('type');
+    const {
+      searchParams,
+    } =
+      new URL(
+        request.url
+      );
 
-    const key =
-      searchParams.get('key');
+    const rawType =
+      searchParams.get(
+        'type'
+      );
+
+    const rawKey =
+      searchParams.get(
+        'key'
+      );
+
+    // ========================================================================
+    // VALIDATION
+    // ========================================================================
 
     if (
-      !isValidType(type) ||
-      !isValidKey(key)
+      !isValidType(rawType) ||
+      !isValidKey(rawKey)
     ) {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             'Parameter views tidak valid.',
+
+          views:
+            0,
         },
         {
-          status: 400,
+          status:
+            400,
+
+          headers:
+            NO_CACHE_HEADERS,
         }
       );
     }
 
-    const cleanKey =
-      key.trim();
+    // ========================================================================
+    // NORMALIZE
+    // ========================================================================
 
-    const { data, error } =
-      await supabaseAdmin
-        .from('content_views')
-        .select('views')
+    const type =
+      normalizeType(
+        rawType
+      );
+
+    const key =
+      normalizeKey(
+        rawKey
+      );
+
+    // ========================================================================
+    // SUPABASE
+    // ========================================================================
+
+    const supabase =
+      getSupabase();
+
+    if (!supabase) {
+      console.error(
+        `[${SITE_NAME}] GET views: Supabase belum dikonfigurasi.`
+      );
+
+      return NextResponse.json(
+        {
+          success:
+            false,
+
+          message:
+            'Database views belum dikonfigurasi.',
+
+          views:
+            0,
+        },
+        {
+          status:
+            503,
+
+          headers:
+            NO_CACHE_HEADERS,
+        }
+      );
+    }
+
+    // ========================================================================
+    // READ VIEW
+    // ========================================================================
+
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          'content_views'
+        )
+        .select(
+          'views'
+        )
         .eq(
           'content_type',
           type
         )
         .eq(
           'content_key',
-          cleanKey
+          key
         )
         .maybeSingle();
 
     if (error) {
-      throw error;
+      console.error(
+        `[${SITE_NAME}] Supabase GET views error:`,
+        error
+      );
+
+      return NextResponse.json(
+        {
+          success:
+            false,
+
+          message:
+            'Gagal membaca jumlah views.',
+
+          views:
+            0,
+        },
+        {
+          status:
+            500,
+
+          headers:
+            NO_CACHE_HEADERS,
+        }
+      );
     }
+
+    // ========================================================================
+    // RESPONSE
+    // ========================================================================
 
     return NextResponse.json(
       {
-        success: true,
+        success:
+          true,
 
         type,
 
-        key: cleanKey,
+        key,
 
         views:
-          Number(data?.views) || 0,
+          normalizeViewCount(
+            data?.views
+          ),
       },
       {
-        status: 200,
-        headers: {
-          'Cache-Control':
-            'no-store, max-age=0',
-        },
+        status:
+          200,
+
+        headers:
+          NO_CACHE_HEADERS,
       }
     );
   } catch (error) {
     console.error(
-      '[Asyiqul Quran] GET views error:',
+      `[${SITE_NAME}] GET /api/views error:`,
       error
     );
 
     return NextResponse.json(
       {
-        success: false,
-        views: 0,
+        success:
+          false,
+
+        message:
+          'Terjadi kesalahan saat membaca views.',
+
+        views:
+          0,
       },
       {
-        status: 500,
+        status:
+          500,
+
+        headers:
+          NO_CACHE_HEADERS,
       }
     );
   }
@@ -203,12 +506,23 @@ export async function GET(
 // POST
 // ============================================================================
 //
-// POST digunakan untuk mencatat view.
+// Digunakan untuk MENAMBAH views.
+//
+// Body:
 //
 // {
-//    type: "blog",
-//    key: "slug-artikel"
+//   "type": "news",
+//   "key": "slug-artikel"
 // }
+//
+// Kompatibilitas lama:
+//
+// {
+//   "type": "blog",
+//   "key": "slug-artikel"
+// }
+//
+// "blog" otomatis dikonversi menjadi "news".
 //
 // ============================================================================
 
@@ -217,7 +531,7 @@ export async function POST(
 ) {
   try {
     // ========================================================================
-    // JANGAN HITUNG BOT
+    // USER AGENT
     // ========================================================================
 
     const userAgent =
@@ -225,133 +539,291 @@ export async function POST(
         'user-agent'
       ) || '';
 
-    if (isBot(userAgent)) {
-      return NextResponse.json(
-        {
-          success: true,
-          ignored: true,
-          views: null,
-        },
-        {
-          status: 200,
-        }
-      );
-    }
-
     // ========================================================================
     // BODY
     // ========================================================================
 
     const body =
-      await request
+      (await request
         .json()
-        .catch(() => null);
+        .catch(
+          () => null
+        )) as ViewRequestBody | null;
+
+    // ========================================================================
+    // BODY VALIDATION
+    // ========================================================================
 
     if (!body) {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
-            'Body tidak valid.',
+            'Body request tidak valid.',
+
+          views:
+            0,
         },
         {
-          status: 400,
+          status:
+            400,
+
+          headers:
+            NO_CACHE_HEADERS,
         }
       );
     }
 
-    const {
-      type,
-      key,
-    } = body;
+    const rawType =
+      body.type;
+
+    const rawKey =
+      body.key;
 
     if (
-      !isValidType(type) ||
-      !isValidKey(key)
+      !isValidType(rawType) ||
+      !isValidKey(rawKey)
     ) {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             'Data views tidak valid.',
+
+          views:
+            0,
         },
         {
-          status: 400,
+          status:
+            400,
+
+          headers:
+            NO_CACHE_HEADERS,
         }
       );
     }
 
-    const cleanKey =
-      key.trim();
-
     // ========================================================================
-    // HASH VIEWER
+    // NORMALIZE
     // ========================================================================
 
-    const viewerHash =
-      createViewerHash(
-        request
+    const type =
+      normalizeType(
+        rawType
+      );
+
+    const key =
+      normalizeKey(
+        rawKey
       );
 
     // ========================================================================
-    // REGISTER VIA RPC
+    // SUPABASE CONFIG
+    // ========================================================================
+
+    const supabase =
+      getSupabase();
+
+    if (!supabase) {
+      console.error(
+        `[${SITE_NAME}] POST views: Supabase belum dikonfigurasi.`
+      );
+
+      return NextResponse.json(
+        {
+          success:
+            false,
+
+          message:
+            'Database views belum dikonfigurasi.',
+
+          views:
+            0,
+        },
+        {
+          status:
+            503,
+
+          headers:
+            NO_CACHE_HEADERS,
+        }
+      );
+    }
+
+    // ========================================================================
+    // BOT CHECK
+    // ========================================================================
+    //
+    // Bot hanya membaca jumlah view saat ini.
+    //
+    // TIDAK menjalankan increment_content_view.
+    //
+    // ========================================================================
+
+    if (
+      isBot(
+        userAgent
+      )
+    ) {
+      const current =
+        await getCurrentViews(
+          type,
+          key
+        );
+
+      if (current.error) {
+        console.error(
+          `[${SITE_NAME}] Bot view read error:`,
+          current.error
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success:
+            true,
+
+          ignored:
+            true,
+
+          reason:
+            'bot',
+
+          type,
+
+          key,
+
+          views:
+            current.views,
+        },
+        {
+          status:
+            200,
+
+          headers:
+            NO_CACHE_HEADERS,
+        }
+      );
+    }
+
+    // ========================================================================
+    // INCREMENT VIEW VIA RPC
+    // ========================================================================
+    //
+    // SQL:
+    //
+    // public.increment_content_view(
+    //   p_type text,
+    //   p_key text
+    // )
+    //
+    // Function ini menggunakan INSERT ... ON CONFLICT sehingga increment
+    // bersifat atomic dan aman ketika ada beberapa request bersamaan.
+    //
     // ========================================================================
 
     const {
       data,
       error,
     } =
-      await supabaseAdmin.rpc(
-        'register_content_view',
+      await supabase.rpc(
+        'increment_content_view',
         {
-          p_content_type:
+          p_type:
             type,
 
-          p_content_key:
-            cleanKey,
-
-          p_viewer_hash:
-            viewerHash,
+          p_key:
+            key,
         }
       );
 
+    // ========================================================================
+    // RPC ERROR
+    // ========================================================================
+
     if (error) {
-      throw error;
+      console.error(
+        `[${SITE_NAME}] increment_content_view error:`,
+        error
+      );
+
+      return NextResponse.json(
+        {
+          success:
+            false,
+
+          message:
+            'Gagal menambahkan jumlah views.',
+
+          views:
+            0,
+        },
+        {
+          status:
+            500,
+
+          headers:
+            NO_CACHE_HEADERS,
+        }
+      );
     }
+
+    // ========================================================================
+    // RESPONSE
+    // ========================================================================
 
     return NextResponse.json(
       {
-        success: true,
+        success:
+          true,
+
+        ignored:
+          false,
 
         type,
 
-        key:
-          cleanKey,
+        key,
 
         views:
-          Number(data) || 0,
+          normalizeViewCount(
+            data
+          ),
       },
       {
-        status: 200,
-        headers: {
-          'Cache-Control':
-            'no-store, max-age=0',
-        },
+        status:
+          200,
+
+        headers:
+          NO_CACHE_HEADERS,
       }
     );
   } catch (error) {
     console.error(
-      '[Asyiqul Quran] POST views error:',
+      `[${SITE_NAME}] POST /api/views error:`,
       error
     );
 
     return NextResponse.json(
       {
-        success: false,
-        views: 0,
+        success:
+          false,
+
+        message:
+          'Terjadi kesalahan saat mencatat views.',
+
+        views:
+          0,
       },
       {
-        status: 500,
+        status:
+          500,
+
+        headers:
+          NO_CACHE_HEADERS,
       }
     );
   }

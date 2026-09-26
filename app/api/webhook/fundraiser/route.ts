@@ -6,8 +6,8 @@ import { NextResponse } from 'next/server';
 // CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
+const SITE_URL = 'https://www.senyum.or.id';
 const FUNDRAISER_STATS_URL = `${SITE_URL}/fundraiser/stats`;
 
 // ============================================================================

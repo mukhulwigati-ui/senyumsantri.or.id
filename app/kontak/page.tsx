@@ -7,51 +7,82 @@ import type { Metadata } from 'next';
 // IDENTITAS RESMI
 // =========================================================
 
-const SITE_NAME = 'asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
 
-const OFFICIAL_WA = '6285328813960';
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
 
-const DISPLAY_WA = '+62 853-2881-3960';
+const SITE_DOMAIN = 'senyum.or.id';
+
+const OFFICIAL_WA = '6285555555124';
+
+const DISPLAY_WA = '+62 855-5555-5124';
+
+const OFFICIAL_EMAIL = 'darussalammudemak@gmail.com';
 
 const OFFICIAL_ADDRESS =
-  'Jl. Raya Sirampog, Kalijeruk, Mendala, Kec. Sirampog, Kabupaten Brebes, Jawa Tengah 52272';
+  'Jl. Kyai Jebat No. 9, Bintoro, Demak, Jawa Tengah 59511';
 
-const SITE_URL = 'https://asyiq.ponpes.id';
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id';
 
 // =========================================================
 // SEO METADATA
 // =========================================================
 
 export const metadata: Metadata = {
-  title: 'Hubungi Kami | asyiq.ponpes.id',
+  title: `Hubungi Kami | ${SITE_NAME}`,
 
   description:
-    'Hubungi admin resmi asyiq.ponpes.id untuk informasi program donasi, infak, sedekah, wakaf, layanan donatur, dan kegiatan Pondok Pesantren.',
+    `Hubungi ${SITE_NAME} untuk informasi pendidikan santri, penerimaan santri, ` +
+    `program pesantren, donasi, infak, sedekah, wakaf, fundraiser, dan layanan lainnya.`,
 
   keywords: [
-    'kontak asyiq ponpes',
-    'asyiq ponpes',
-    'asyiq.ponpes.id',
-    'pondok pesantren sirampog',
-    'pondok pesantren brebes',
-    'donasi pondok pesantren',
+    'kontak Pondok Matan Darussalam',
+    'Pondok Matan Darussalam Demak',
+    'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak',
+    'pesantren Muhammadiyah Demak',
+    'pesantren Bintoro Demak',
+    'nomor WhatsApp Pondok Matan',
+    'alamat Pondok Matan Darussalam',
+    'senyum.or.id',
+    'donasi pesantren',
     'sedekah pesantren',
     'infak pesantren',
     'wakaf pesantren',
-    'nomor whatsapp asyiq ponpes',
   ],
 
   alternates: {
-    canonical: '/kontak',
+    canonical: `${SITE_URL}/kontak`,
   },
 
   openGraph: {
-    title: 'Hubungi Kami | asyiq.ponpes.id',
+    title: `Hubungi Kami | ${SITE_NAME}`,
     description:
-      'Hubungi admin resmi asyiq.ponpes.id untuk informasi program donasi, infak, sedekah, wakaf, dan layanan donatur.',
+      `Hubungi ${SITE_NAME} untuk informasi pendidikan, kegiatan santri, ` +
+      `program pesantren, donasi, infak, sedekah, wakaf, dan layanan lainnya.`,
     url: `${SITE_URL}/kontak`,
     siteName: SITE_NAME,
+    locale: 'id_ID',
     type: 'website',
+    images: [
+      {
+        url: `${SITE_URL}/images/og-banner.jpg`,
+        width: 1200,
+        height: 630,
+        type: 'image/jpeg',
+        alt: `Kontak ${SITE_NAME}`,
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: `Hubungi Kami | ${SITE_NAME}`,
+    description:
+      `Informasi resmi ${SITE_NAME}, ${OFFICIAL_NAME}, Demak.`,
+    images: [`${SITE_URL}/images/og-banner.jpg`],
   },
 };
 
@@ -65,7 +96,7 @@ export default function KontakPage() {
   // =======================================================
 
   const defaultText = encodeURIComponent(
-    'Assalamualaikum Admin asyiq.ponpes.id, saya ingin bertanya mengenai program dan layanan donasi.'
+    `Assalamu'alaikum Admin ${SITE_NAME}, saya ingin bertanya mengenai informasi pesantren, program, atau layanan melalui ${SITE_DOMAIN}.`
   );
 
   const waChatUrl = `https://wa.me/${OFFICIAL_WA}?text=${defaultText}`;
@@ -193,9 +224,9 @@ export default function KontakPage() {
               md:text-[15px]
             "
           >
-            Kami siap membantu memberikan informasi mengenai program
-            donasi, infak, sedekah, wakaf, kegiatan pesantren, maupun
-            layanan lainnya melalui saluran resmi {SITE_NAME}.
+            Kami siap membantu memberikan informasi mengenai pendidikan
+            santri, penerimaan santri, kegiatan pesantren, program kebaikan,
+            donasi, infak, sedekah, wakaf, maupun layanan resmi {SITE_NAME}.
           </p>
         </div>
       </section>
@@ -333,6 +364,50 @@ export default function KontakPage() {
               </div>
             </div>
 
+            {/* NAMA RESMI LEMBAGA */}
+            <div className="flex items-start gap-3.5">
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-gray-50
+                  text-base
+                "
+              >
+                🕌
+              </div>
+
+              <div>
+                <h3
+                  className="
+                    text-[11px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-gray-800
+                  "
+                >
+                  Nama Resmi
+                </h3>
+
+                <p
+                  className="
+                    mt-1
+                    text-[13px]
+                    leading-6
+                    text-gray-500
+                  "
+                >
+                  {OFFICIAL_NAME}
+                </p>
+              </div>
+            </div>
+
             {/* WEBSITE */}
             <div className="flex items-start gap-3.5">
               <div
@@ -376,7 +451,7 @@ export default function KontakPage() {
                     hover:text-emerald-700
                   "
                 >
-                  {SITE_NAME}
+                  {SITE_DOMAIN}
                 </a>
               </div>
             </div>
@@ -430,6 +505,55 @@ export default function KontakPage() {
                 </a>
               </div>
             </div>
+
+            {/* EMAIL */}
+            <div className="flex items-start gap-3.5">
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-gray-50
+                  text-base
+                "
+              >
+                ✉️
+              </div>
+
+              <div>
+                <h3
+                  className="
+                    text-[11px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-gray-800
+                  "
+                >
+                  Email
+                </h3>
+
+                <a
+                  href={`mailto:${OFFICIAL_EMAIL}`}
+                  className="
+                    mt-1
+                    block
+                    break-all
+                    text-[13px]
+                    font-semibold
+                    text-emerald-600
+                    transition
+                    hover:text-emerald-700
+                  "
+                >
+                  {OFFICIAL_EMAIL}
+                </a>
+              </div>
+            </div>
           </div>
 
           <div
@@ -450,9 +574,9 @@ export default function KontakPage() {
                 text-gray-500
               "
             >
-              Untuk pertanyaan mengenai program, konfirmasi donasi,
-              atau kendala transaksi, silakan hubungi admin melalui
-              WhatsApp resmi di atas.
+              Untuk pertanyaan mengenai pesantren, penerimaan santri,
+              program, konfirmasi donasi, atau kendala transaksi, silakan
+              hubungi admin melalui WhatsApp resmi di atas.
             </p>
           </div>
         </div>
@@ -554,8 +678,8 @@ export default function KontakPage() {
             >
               Butuh informasi lebih cepat? Silakan hubungi admin resmi
               {` ${SITE_NAME} `} melalui WhatsApp. Kami akan membantu
-              memberikan informasi mengenai program, donasi, dan
-              kegiatan pesantren.
+              memberikan informasi mengenai pendidikan santri, kegiatan,
+              program pesantren, donasi, dan layanan lainnya.
             </p>
 
             {/* Hotline */}

@@ -182,7 +182,7 @@ Jazakumullah khairan, Kak *${donorNameFromForm}*. Donasi Anda telah berhasil kam
 Semoga sedekah yang ditunaikan menjadi penggugur dosa, pembuka pintu rezeki, dan membawa keberkahan yang berlipat ganda untuk Anda beserta keluarga. Aamiin Yaa Rabbal 'Aalamiin.
 
 ----------------------------
-*Asyiqul Quran*
+*Pondok Matan Darussalam*
 _Salurkan kepedulian Anda secara amanah & transparan_`;
 
       try {

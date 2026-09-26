@@ -30,15 +30,17 @@ const geistMono = Geist_Mono({
 // SITE CONFIG
 // ============================================================================
 
-const SITE_NAME = "Asyiqul Quran";
-const SITE_URL = "https://www.asyiq.ponpes.id";
-const SITE_DOMAIN = "www.asyiq.ponpes.id";
+const SITE_NAME = "Pondok Matan Darussalam";
+const SITE_URL = "https://senyum.or.id";
+
+const OFFICIAL_NAME =
+  "Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak";
 
 const DEFAULT_TITLE =
-  "Pondok Pesantren Asyiqul Quran | Pendidikan, Donasi & Infaq Online Amanah";
+  "Pondok Matan Darussalam Demak | Pendidikan Kader, Tahfidz & Pesantren Muhammadiyah";
 
 const DEFAULT_DESCRIPTION =
-  "Salurkan infaq, donasi pendidikan, zakat, dan wakaf melalui Pondok Pesantren Asyiqul Quran. Dukung pendidikan santri, fasilitas pesantren, dakwah Al-Quran, dan berbagai program kebaikan.";
+  "Website resmi Pondok Matan Darussalam, Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak. Pesantren kader dengan pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, dan pengembangan keterampilan santri.";
 
 const OG_IMAGE = `${SITE_URL}/images/og-banner.jpg`;
 
@@ -61,7 +63,7 @@ const SANITY_DATASET =
  *
  * SANITY_API_READ_TOKEN=xxxxxxxx
  *
- * Jika dataset Sanity Anda public, token sebenarnya bisa tidak digunakan
+ * Jika dataset Sanity public, token tidak wajib
  * untuk query read-only seperti di bawah.
  */
 const SANITY_READ_TOKEN =
@@ -78,7 +80,7 @@ const serverClient = createClient({
   // Ambil langsung dari Sanity API.
   useCdn: false,
 
-  apiVersion: "2026-09-24",
+  apiVersion: "2026-09-25",
 
   ...(SANITY_READ_TOKEN
     ? {
@@ -93,7 +95,7 @@ const serverClient = createClient({
 //
 // Donasi terbaru diperbarui maksimal setiap 60 detik.
 //
-// Ini lebih ringan daripada membuat SELURUH website force-dynamic.
+// Ini lebih ringan daripada membuat seluruh website force-dynamic.
 // ============================================================================
 
 export const revalidate = 60;
@@ -121,13 +123,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 
   // --------------------------------------------------------------------------
-  // PWA
+  // PWA / APPLE
   // --------------------------------------------------------------------------
 
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Pesantren Asyiq",
+    title: "Pondok Matan",
   },
 
   // --------------------------------------------------------------------------
@@ -135,36 +137,51 @@ export const metadata: Metadata = {
   // --------------------------------------------------------------------------
 
   keywords: [
-    "Pondok Pesantren Asyiqul Quran",
-    "Pesantren Asyiqul Quran",
-    "Asyiqul Quran",
-    "asyiq ponpes id",
+    "Pondok Matan",
+    "Pondok Matan Darussalam",
+    "Pondok Matan Demak",
+    "Pesantren Matan Demak",
+    "Pondok Pesantren Darussalam",
+    "Pondok Pesantren Darussalam Muhammadiyah",
+    "Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak",
+    "Pesantren Muhammadiyah Demak",
+    "Pesantren Bintoro Demak",
+    "Pesantren Demak",
+    "pondok pesantren Demak",
+    "pesantren kader ulama",
+    "pendidikan kader ulama",
+    "pendidikan kader Muhammadiyah",
+    "pesantren tahfidz Demak",
+    "tahfidz Al Quran Demak",
+    "Bahasa Arab pesantren",
+    "kitab matan",
+    "kitab kuning",
+    "pendidikan Islam Demak",
+    "santri Muhammadiyah",
+    "beasiswa santri",
+    "beasiswa tahfidz",
     "donasi pesantren",
     "infaq pesantren",
-    "infaq online",
-    "zakat online",
+    "sedekah pesantren",
     "wakaf pesantren",
-    "wakaf pembangunan pesantren",
     "donasi pendidikan santri",
-    "donasi santri",
-    "pendidikan Islam",
-    "dakwah Al-Quran",
-    "program pesantren",
+    "senyum or id",
+    "senyum.or.id",
   ],
 
   // --------------------------------------------------------------------------
-  // AUTHOR
+  // AUTHOR / PUBLISHER
   // --------------------------------------------------------------------------
 
   authors: [
     {
-      name: SITE_NAME,
+      name: OFFICIAL_NAME,
       url: SITE_URL,
     },
   ],
 
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
+  creator: OFFICIAL_NAME,
+  publisher: OFFICIAL_NAME,
 
   // --------------------------------------------------------------------------
   // CANONICAL
@@ -178,15 +195,15 @@ export const metadata: Metadata = {
   // OPEN GRAPH
   // ==========================================================================
   //
-  // INI YANG DIBACA WHATSAPP / FACEBOOK.
+  // Metadata ini akan dibaca WhatsApp, Facebook, Telegram, dll.
   //
-  // File wajib berada di:
+  // Pastikan file berada di:
   //
   // public/images/og-banner.jpg
   //
-  // Sehingga bisa dibuka dari:
+  // sehingga dapat diakses dari:
   //
-  // https://www.asyiq.ponpes.id/images/og-banner.jpg
+  // https://senyum.or.id/images/og-banner.jpg
   //
   // ==========================================================================
 
@@ -194,7 +211,7 @@ export const metadata: Metadata = {
     title: DEFAULT_TITLE,
 
     description:
-      "Tunaikan kepedulian Anda dengan mudah. Dukung pendidikan santri, pembangunan fasilitas pesantren, dakwah Al-Quran, infaq, sedekah, zakat, dan wakaf bersama Asyiqul Quran.",
+      "Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Mendidik kader yang alim muttaqin, berakhlak mulia, unggul, terampil, dan berkemajuan melalui pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, serta pembinaan kemandirian santri.",
 
     url: SITE_URL,
 
@@ -210,7 +227,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         type: "image/jpeg",
-        alt: "Pondok Pesantren Asyiqul Quran",
+        alt: "Pondok Matan Darussalam Muhammadiyah Bintoro Demak",
       },
     ],
   },
@@ -225,7 +242,7 @@ export const metadata: Metadata = {
     title: DEFAULT_TITLE,
 
     description:
-      "Dukung pendidikan santri, dakwah Al-Quran, infaq, sedekah, zakat, dan wakaf bersama Pondok Pesantren Asyiqul Quran.",
+      "Website resmi Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, dan pembinaan santri.",
 
     images: [OG_IMAGE],
   },
@@ -259,21 +276,22 @@ export const metadata: Metadata = {
   },
 
   // ==========================================================================
-  // VERIFICATION
+  // CATEGORY
+  // ==========================================================================
+
+  category: "education",
+
+  // ==========================================================================
+  // GOOGLE SEARCH CONSOLE
   // ==========================================================================
   //
-  // Jangan masukkan:
-  //
-  // google-site-verification-token-anda
-  //
-  // karena itu hanya placeholder.
-  //
-  // Kalau sudah punya token asli Search Console, aktifkan:
+  // Jika nanti sudah mendapatkan kode verifikasi Google Search Console:
   //
   // verification: {
-  //   google: "TOKEN_GOOGLE_ASLI",
+  //   google: "KODE_VERIFIKASI_GOOGLE",
   // },
   //
+  // Jangan memasukkan placeholder palsu.
   // ==========================================================================
 };
 
@@ -344,7 +362,15 @@ function getRelativeTime(createdAt?: string): string {
     days / 30
   );
 
-  return `${months} bulan yang lalu`;
+  if (months < 12) {
+    return `${months} bulan yang lalu`;
+  }
+
+  const years = Math.floor(
+    days / 365
+  );
+
+  return `${years} tahun yang lalu`;
 }
 
 // ============================================================================
@@ -372,7 +398,7 @@ function getProgramName(
       );
   }
 
-  return "Infaq & Wakaf Pesantren";
+  return "Dukungan Pendidikan Santri";
 }
 
 // ============================================================================

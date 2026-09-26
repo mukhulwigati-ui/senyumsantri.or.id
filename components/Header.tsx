@@ -1,74 +1,413 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // 🚀 FIXED: Impor useRouter dari next/navigation untuk Next.js App Router
-import { Search } from 'lucide-react';
+import {
+  usePathname,
+  useRouter,
+} from 'next/navigation';
+
+import {
+  Search,
+} from 'lucide-react';
+
+// ============================================================================
+// IDENTITAS WEBSITE
+// ============================================================================
+
+const SITE_NAME =
+  'senyumsantri.or.id';
+
+// ============================================================================
+// NAVIGATION
+// ============================================================================
+
+const navigation = [
+  {
+    label: 'Beranda',
+    href: '/',
+  },
+  {
+    label: 'Program Donasi',
+    href: '/program',
+  },
+  {
+    label: 'Tentang Kami',
+    href: '/tentang-kami',
+  },
+  {
+    label: 'Hubungi Kami',
+    href: '/kontak',
+  },
+];
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const router = useRouter(); // 🚀 FIXED: Inisialisasi hook router
+  const router =
+    useRouter();
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const pathname =
+    usePathname();
+
+  const [searchQuery, setSearchQuery] =
+    useState('');
+
+  // ==========================================================================
+  // SEARCH
+  // ==========================================================================
+
+  const handleSearchSubmit = (
+    e: FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // 🚀 FIXED: Alihkan rute ke halaman hasil pencarian Google-Style secara dinamis
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+
+    const query =
+      searchQuery.trim();
+
+    if (!query) {
+      return;
     }
+
+    router.push(
+      `/search?q=${encodeURIComponent(query)}`
+    );
+
+    setSearchQuery('');
   };
 
+  // ==========================================================================
+  // ACTIVE NAVIGATION
+  // ==========================================================================
+
+  const isActive = (
+    href: string
+  ) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
+  };
+
+  // ==========================================================================
+  // RENDER
+  // ==========================================================================
+
   return (
-    // 🚀 GLASSMORPHISM HEADER
-    <header className="sticky top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-md shadow-sm transition-all duration-300">
-      
-      {/* Container utama dengan pembagian gap yang proporsional */}
-      <div className="max-w-6xl mx-auto px-4 md:px-16 h-16 md:h-20 flex items-center justify-between gap-4 overflow-hidden">
-        
-        {/* 1. Area Logo (Murni Gambar Saja) */}
-        <Link href="/" className="flex items-center group shrink-0 py-1.5">
-          <div className="relative h-8 md:h-10 w-auto flex items-center overflow-hidden">
-            <img 
-              src="/images/asyiq.png" 
-              alt="Logo asyiq.ponpes.id" 
-              className="h-full w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-            />
+    <header
+      className="
+        sticky
+        top-0
+        z-50
+
+        w-full
+
+        border-b
+        border-gray-100/80
+
+        bg-white/85
+
+        shadow-[0_1px_12px_rgba(15,23,42,0.035)]
+
+        backdrop-blur-xl
+      "
+    >
+
+      {/* =====================================================================
+          MAIN CONTAINER
+          ===================================================================== */}
+
+      <div
+        className="
+          mx-auto
+
+          flex
+          h-16
+          w-full
+          max-w-5xl
+
+          items-center
+          justify-between
+
+          gap-3
+
+          px-4
+
+          sm:px-6
+
+          md:h-20
+        "
+      >
+
+        {/* ===================================================================
+            WORDMARK / LOGO
+            =================================================================== */}
+
+        <Link
+          href="/"
+          aria-label={`${SITE_NAME} - Beranda`}
+          className="
+            group
+            flex
+            min-w-0
+            shrink-0
+            items-center
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-baseline
+
+              whitespace-nowrap
+
+              tracking-[-0.055em]
+
+              transition-opacity
+              duration-300
+
+              group-hover:opacity-80
+            "
+          >
+
+            {/* senyumsantri */}
+
+            <span
+              className="
+                text-[20px]
+                font-extrabold
+                leading-none
+
+                text-emerald-800
+
+                sm:text-[22px]
+
+                md:text-[25px]
+              "
+            >
+              senyumsantri
+            </span>
+
+            {/* .or.id */}
+
+            <span
+              className="
+                text-[20px]
+                font-bold
+                leading-none
+
+                text-lime-600
+
+                sm:text-[22px]
+
+                md:text-[25px]
+              "
+            >
+              .or.id
+            </span>
+
           </div>
+
         </Link>
 
-        {/* 2. Menu Navigasi Tengah (Desktop Only) */}
-        <nav className="hidden md:flex items-center space-x-1 bg-white/40 border border-white/40 p-1.5 rounded-full shadow-inner shadow-gray-50/50 shrink-0">
-          <Link href="/" className="text-xs font-bold text-emerald-700 bg-white/80 px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
-            Beranda
-          </Link>
-          <Link href="/program" className="text-xs font-bold text-gray-500 hover:text-emerald-600 px-4 py-2 rounded-full transition whitespace-nowrap">
-            Program Donasi
-          </Link>
-          <Link href="/tentang-kami" className="text-xs font-bold text-gray-500 hover:text-emerald-600 px-4 py-2 rounded-full transition whitespace-nowrap">
-            Tentang Kami
-          </Link>
-          <Link href="/kontak" className="text-xs font-bold text-gray-500 hover:text-emerald-600 px-4 py-2 rounded-full transition whitespace-nowrap">
-            Hubungi Kami
-          </Link>
+        {/* ===================================================================
+            DESKTOP NAVIGATION
+            =================================================================== */}
+
+        <nav
+          aria-label="Navigasi utama"
+          className="
+            hidden
+
+            items-center
+
+            rounded-full
+
+            border
+            border-gray-100
+
+            bg-gray-50/70
+
+            p-1
+
+            md:flex
+          "
+        >
+
+          {navigation.map(
+            (item) => {
+              const active =
+                isActive(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    whitespace-nowrap
+
+                    rounded-full
+
+                    px-3.5
+                    py-2
+
+                    text-[11px]
+
+                    font-bold
+
+                    transition-all
+                    duration-200
+
+                    ${
+                      active
+                        ? `
+                          bg-white
+                          text-emerald-700
+                          shadow-sm
+                          ring-1
+                          ring-gray-100
+                        `
+                        : `
+                          text-gray-500
+                          hover:bg-white/70
+                          hover:text-emerald-700
+                        `
+                    }
+                  `}
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+          )}
+
         </nav>
 
-        {/* 3. Fitur Search Bar Kanan */}
-        <form onSubmit={handleSearchSubmit} className="relative max-w-[140px] md:max-w-[180px] w-full">
+        {/* ===================================================================
+            SEARCH
+            =================================================================== */}
+
+        <form
+          onSubmit={handleSearchSubmit}
+          role="search"
+          className="
+            relative
+
+            ml-auto
+
+            w-full
+            max-w-[125px]
+
+            sm:max-w-[155px]
+
+            md:max-w-[175px]
+          "
+        >
+
+          <label
+            htmlFor="header-search"
+            className="sr-only"
+          >
+            Cari informasi
+          </label>
+
           <input
-            type="text"
-            placeholder="Cari program..."
-            className="w-full bg-white/50 border border-white/60 text-xs font-medium text-gray-700 pl-4 pr-9 py-2 rounded-xl placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 focus:bg-white/90 focus:ring-4 focus:ring-emerald-500/5 transition-all duration-300"
+            id="header-search"
+            type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) =>
+              setSearchQuery(
+                e.target.value
+              )
+            }
+            placeholder="Cari..."
+            autoComplete="off"
+            className="
+              h-10
+              w-full
+
+              rounded-xl
+
+              border
+              border-gray-200
+
+              bg-gray-50/80
+
+              pl-3.5
+              pr-9
+
+              text-xs
+              font-medium
+
+              text-gray-700
+
+              outline-none
+
+              transition-all
+              duration-200
+
+              placeholder:text-gray-400
+
+              hover:border-gray-300
+
+              focus:border-emerald-300
+              focus:bg-white
+              focus:ring-4
+              focus:ring-emerald-500/5
+            "
           />
+
           <button
             type="submit"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+            aria-label="Cari"
+            className="
+              absolute
+
+              right-2.5
+              top-1/2
+
+              flex
+              h-7
+              w-7
+
+              -translate-y-1/2
+
+              items-center
+              justify-center
+
+              rounded-lg
+
+              text-gray-400
+
+              transition-all
+              duration-200
+
+              hover:bg-emerald-50
+              hover:text-emerald-600
+            "
           >
-            <Search className="w-3.5 h-3.5 stroke-[2.5]" />
+
+            <Search
+              className="
+                h-3.5
+                w-3.5
+              "
+              strokeWidth={2.4}
+            />
+
           </button>
+
         </form>
 
       </div>
+
     </header>
   );
 }

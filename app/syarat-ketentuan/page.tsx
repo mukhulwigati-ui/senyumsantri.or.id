@@ -8,9 +8,19 @@ import Link from 'next/link';
 // SITE CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_DOMAIN = 'www.asyiq.ponpes.id';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
+
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
+
+const SITE_DOMAIN = 'senyum.or.id';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id';
+
+const OG_IMAGE =
+  `${SITE_URL}/images/og-banner.jpg`;
 
 // ============================================================================
 // METADATA
@@ -21,16 +31,19 @@ export const metadata: Metadata = {
 
   description:
     `Syarat dan ketentuan penggunaan layanan ${SITE_NAME} melalui ${SITE_DOMAIN}. ` +
-    `Pelajari ketentuan donasi, pembayaran, fundraiser, pengelolaan program, ` +
-    `serta hak dan tanggung jawab pengguna.`,
+    `Pelajari ketentuan penggunaan website, program pesantren, donasi, pembayaran, ` +
+    `fundraiser, pengelolaan program, serta hak dan tanggung jawab pengguna.`,
 
   keywords: [
-    'syarat ketentuan Asyiqul Quran',
-    'donasi Asyiqul Quran',
+    'syarat ketentuan Pondok Matan Darussalam',
+    'ketentuan senyum.or.id',
+    'Pondok Matan Darussalam Demak',
+    'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak',
     'ketentuan donasi online',
-    'fundraiser Asyiqul Quran',
-    'asyiq.ponpes.id',
-    'program kebaikan Asyiqul Quran',
+    'fundraiser Pondok Matan Darussalam',
+    'program kebaikan pesantren',
+    'donasi pesantren Demak',
+    'senyum.or.id',
   ],
 
   alternates: {
@@ -41,8 +54,8 @@ export const metadata: Metadata = {
     title: `Syarat & Ketentuan | ${SITE_NAME}`,
 
     description:
-      `Ketentuan penggunaan layanan donasi, pembayaran, fundraiser, ` +
-      `dan program kebaikan ${SITE_NAME}.`,
+      `Ketentuan penggunaan website, donasi, pembayaran, fundraiser, ` +
+      `dan berbagai program kebaikan ${SITE_NAME}.`,
 
     url: `${SITE_URL}/syarat-ketentuan`,
 
@@ -51,6 +64,40 @@ export const metadata: Metadata = {
     locale: 'id_ID',
 
     type: 'website',
+
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        type: 'image/jpeg',
+        alt: `Syarat & Ketentuan ${SITE_NAME}`,
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+
+    title: `Syarat & Ketentuan | ${SITE_NAME}`,
+
+    description:
+      `Ketentuan penggunaan layanan resmi ${SITE_NAME}, ${OFFICIAL_NAME}.`,
+
+    images: [OG_IMAGE],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
   },
 };
 
@@ -78,7 +125,7 @@ export default function SyaratKetentuanPage() {
           </h1>
 
           <p className="text-xs text-gray-400 font-medium">
-            Terakhir diperbarui: 24 September 2026
+            Terakhir diperbarui: 26 September 2026
           </p>
 
         </header>
@@ -91,14 +138,16 @@ export default function SyaratKetentuanPage() {
 
           <p>
             Selamat datang di platform digital resmi{' '}
-            <strong>{SITE_NAME}</strong> yang dapat diakses melalui{' '}
+            <strong>{SITE_NAME}</strong>, bagian dari{' '}
+            <strong>{OFFICIAL_NAME}</strong>, yang dapat diakses melalui{' '}
             <strong>{SITE_DOMAIN}</strong>.
           </p>
 
           <p>
-            Syarat & Ketentuan ini mengatur penggunaan website, proses donasi,
-            pembayaran, pendaftaran fundraiser, serta layanan lain yang tersedia
-            melalui platform {SITE_NAME}.
+            Syarat & Ketentuan ini mengatur penggunaan website, akses informasi
+            pesantren, program kebaikan, proses donasi, pembayaran, pendaftaran
+            fundraiser, serta layanan lain yang tersedia melalui platform
+            {SITE_NAME}.
           </p>
 
           <p>
@@ -257,9 +306,9 @@ export default function SyaratKetentuanPage() {
             </p>
 
             <p className="text-xs md:text-sm text-gray-600 leading-relaxed pl-0 md:pl-10">
-              {SITE_NAME} berupaya menyalurkan dana secara amanah,
-              bertanggung jawab, dan mempertimbangkan kebutuhan serta kondisi
-              penerima manfaat.
+              {SITE_NAME}, sebagai bagian dari {OFFICIAL_NAME}, berupaya
+              mengelola dan menyalurkan dana secara amanah, bertanggung jawab,
+              serta mempertimbangkan kebutuhan dan kondisi penerima manfaat.
             </p>
 
             <p className="text-xs md:text-sm text-gray-600 leading-relaxed pl-0 md:pl-10">
@@ -503,7 +552,7 @@ export default function SyaratKetentuanPage() {
                 href="/kontak"
                 className="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-none transition-colors"
               >
-                Hubungi Asyiqul Quran
+                Hubungi Pondok Matan
               </Link>
 
             </div>
@@ -523,9 +572,9 @@ export default function SyaratKetentuanPage() {
           </h2>
 
           <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-            Pastikan Anda selalu melakukan transaksi melalui website resmi
-            {` ${SITE_NAME}`} dan memeriksa alamat website sebelum melakukan
-            pembayaran.
+            Pastikan Anda selalu mengakses dan melakukan transaksi melalui
+            website resmi {` ${SITE_NAME}`} serta memeriksa alamat website
+            sebelum memasukkan data atau melakukan pembayaran.
           </p>
 
           <p className="text-xs md:text-sm font-bold text-emerald-700">

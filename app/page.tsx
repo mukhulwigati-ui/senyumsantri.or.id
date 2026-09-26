@@ -1,34 +1,42 @@
 // app/page.tsx
 
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-import Hero from '@/components/Hero';
-import TotalAccumulationWidget from '@/components/TotalAccumulationWidget';
-import Campaign from '@/components/Campaign';
-import News from '@/components/News';
+import Hero from "@/components/Hero";
+import TotalAccumulationWidget from "@/components/TotalAccumulationWidget";
+import Campaign from "@/components/Campaign";
+import News from "@/components/News";
 
 // ============================================================================
 // SITE CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = "Pondok Matan Darussalam";
+const OFFICIAL_NAME =
+  "Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak";
+
+const SITE_URL = "https://senyum.or.id";
+
+// ============================================================================
+// HOMEPAGE SEO
+// ============================================================================
 
 const PAGE_TITLE =
-  'Pondok Pesantren Asyiqul Quran | Pendidikan, Donasi & Infaq Online Amanah';
+  "Pondok Matan Darussalam Demak | Pesantren Muhammadiyah & Pendidikan Kader";
 
 const PAGE_DESCRIPTION =
-  'Tunaikan kepedulian Anda dengan mudah bersama Pondok Pesantren Asyiqul Quran. Dukung pendidikan santri, pembangunan fasilitas pesantren, dakwah Al-Quran, infak, sedekah, zakat, dan wakaf secara amanah.';
+  "Pondok Matan Darussalam adalah Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak. Pesantren kader dengan pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, keterampilan, dan kemandirian santri.";
 
 /**
- * File wajib berada di:
+ * File OG wajib berada di:
  *
  * public/images/og-banner.jpg
  *
- * dan harus bisa dibuka dari:
+ * dan dapat diakses melalui:
  *
- * https://www.asyiq.ponpes.id/images/og-banner.jpg
+ * https://senyum.or.id/images/og-banner.jpg
  */
+
 const OG_IMAGE = `${SITE_URL}/images/og-banner.jpg`;
 
 // ============================================================================
@@ -45,6 +53,42 @@ export const metadata: Metadata = {
   description: PAGE_DESCRIPTION,
 
   // --------------------------------------------------------------------------
+  // KEYWORDS
+  // --------------------------------------------------------------------------
+
+  keywords: [
+    "Pondok Matan",
+    "Pondok Matan Darussalam",
+    "Pondok Matan Demak",
+    "Pesantren Matan Demak",
+    "Pondok Pesantren Darussalam",
+    "Pondok Pesantren Darussalam Muhammadiyah",
+    "Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak",
+    "Pesantren Muhammadiyah Demak",
+    "Pesantren Bintoro Demak",
+    "Pondok Pesantren Demak",
+    "Pesantren Demak",
+    "pendidikan kader Muhammadiyah",
+    "pendidikan kader ulama",
+    "pesantren kader ulama",
+    "pesantren tahfidz Demak",
+    "tahfidz Al Quran Demak",
+    "Bahasa Arab pesantren",
+    "kitab matan",
+    "kitab kuning",
+    "pendidikan Islam Demak",
+    "santri Muhammadiyah",
+    "beasiswa santri",
+    "beasiswa tahfidz",
+    "donasi pesantren",
+    "infaq pesantren",
+    "sedekah pesantren",
+    "wakaf pesantren",
+    "donasi pendidikan santri",
+    "senyum.or.id",
+  ],
+
+  // --------------------------------------------------------------------------
   // CANONICAL
   // --------------------------------------------------------------------------
 
@@ -56,23 +100,24 @@ export const metadata: Metadata = {
   // OPEN GRAPH
   // ==========================================================================
   //
-  // Metadata ini yang terutama dibaca WhatsApp, Facebook, Telegram,
-  // LinkedIn, dan layanan social preview lainnya.
+  // Digunakan WhatsApp, Facebook, Telegram, LinkedIn,
+  // dan layanan social preview lainnya.
   //
   // ==========================================================================
 
   openGraph: {
     title: PAGE_TITLE,
 
-    description: PAGE_DESCRIPTION,
+    description:
+      "Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Mendidik kader yang alim muttaqin, berakhlak mulia, unggul, terampil, dan berkemajuan melalui pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, dan pembinaan santri.",
 
     url: SITE_URL,
 
     siteName: SITE_NAME,
 
-    locale: 'id_ID',
+    locale: "id_ID",
 
-    type: 'website',
+    type: "website",
 
     images: [
       {
@@ -82,10 +127,9 @@ export const metadata: Metadata = {
 
         height: 630,
 
-        type: 'image/jpeg',
+        type: "image/jpeg",
 
-        alt:
-          'Pondok Pesantren Asyiqul Quran - Pendidikan, Donasi dan Infaq Online',
+        alt: `${OFFICIAL_NAME} - Pondok Matan Darussalam Demak`,
       },
     ],
   },
@@ -95,11 +139,12 @@ export const metadata: Metadata = {
   // ==========================================================================
 
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
 
     title: PAGE_TITLE,
 
-    description: PAGE_DESCRIPTION,
+    description:
+      "Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, dan kemandirian santri.",
 
     images: [
       OG_IMAGE,
@@ -112,17 +157,20 @@ export const metadata: Metadata = {
 // ============================================================================
 
 /**
- * Homepage boleh direvalidasi setiap 60 detik.
+ * Homepage direvalidasi setiap 60 detik.
  *
- * Tidak perlu:
+ * Tidak perlu menggunakan:
  *
- * export const dynamic = 'force-dynamic';
+ * export const dynamic = "force-dynamic";
  *
- * karena Campaign, TotalAccumulationWidget, notifikasi donasi, dan data
- * lainnya dapat mengatur mekanisme refresh masing-masing melalui API/fetch.
+ * karena Campaign, TotalAccumulationWidget, notifikasi donasi,
+ * dan data lainnya dapat melakukan refresh melalui API/fetch
+ * masing-masing.
  *
- * Dengan ini homepage lebih ringan untuk Vercel dan bot SEO.
+ * Ini membuat homepage lebih ringan untuk Vercel
+ * sekaligus tetap ramah SEO.
  */
+
 export const revalidate = 60;
 
 // ============================================================================
@@ -140,7 +188,7 @@ export default function HomePage() {
       <Hero />
 
       {/* =====================================================================
-          2. TOTAL AKUMULASI
+          2. TOTAL AKUMULASI DONASI
           ===================================================================== */}
 
       <TotalAccumulationWidget />
@@ -149,9 +197,9 @@ export default function HomePage() {
           3. MAIN CONTENT
           ===================================================================== */}
 
-      <section className="bg-gray-50 px-4 md:px-16 py-10 md:py-14">
+      <section className="bg-gray-50 px-4 py-10 md:px-16 md:py-14">
 
-        <div className="max-w-5xl mx-auto space-y-14 md:space-y-16">
+        <div className="mx-auto max-w-5xl space-y-14 md:space-y-16">
 
           {/* =================================================================
               PROGRAM PESANTREN & GALANG DANA
@@ -162,38 +210,43 @@ export default function HomePage() {
             className="space-y-6"
           >
 
-            {/* SECTION HEADER */}
+            {/* ===============================================================
+                SECTION HEADER
+                =============================================================== */}
 
-            <div className="border-l-4 border-emerald-500 pl-4 md:pl-6 py-1">
+            <div className="border-l-4 border-emerald-500 py-1 pl-4 md:pl-6">
 
-              <span className="text-[10px] md:text-[11px] font-black text-emerald-600 uppercase tracking-[0.16em] block mb-1">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 md:text-[11px]">
                 Program Kebaikan
               </span>
 
-              <h1
+              <h2
                 id="program-kebaikan"
-                className="text-2xl md:text-3xl font-extrabold text-[#333333] tracking-tight leading-tight"
+                className="text-2xl font-extrabold leading-tight tracking-tight text-[#333333] md:text-3xl"
               >
                 Program Pesantren & Galang Dana
-              </h1>
+              </h2>
 
-              <p className="text-gray-500 mt-2 font-medium text-xs md:text-sm leading-relaxed max-w-2xl">
-                Salurkan infak, sedekah, zakat, wakaf, dan donasi terbaik
-                Anda untuk mendukung pendidikan santri, dakwah Al-Quran,
-                fasilitas pesantren, serta berbagai program kebaikan
-                Asyiqul Quran.
+              <p className="mt-2 max-w-2xl text-xs font-medium leading-relaxed text-gray-500 md:text-sm">
+                Mari bersama mendukung pendidikan dan pembinaan santri
+                Pondok Matan Darussalam melalui infak, sedekah, zakat,
+                wakaf, dan berbagai program kebaikan untuk pendidikan,
+                tahfidz Al-Qur&apos;an, pengembangan fasilitas pesantren,
+                serta kebutuhan santri.
               </p>
 
             </div>
 
-            {/* CAMPAIGN */}
+            {/* ===============================================================
+                CAMPAIGN
+                =============================================================== */}
 
             <Campaign />
 
           </section>
 
           {/* =================================================================
-              BERITA & INFORMASI
+              BERITA & INFORMASI PESANTREN
               ================================================================= */}
 
           <section

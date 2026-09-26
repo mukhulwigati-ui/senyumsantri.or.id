@@ -8,53 +8,101 @@ import Link from 'next/link';
 // IDENTITAS RESMI
 // =========================================================
 
-const SITE_NAME = 'asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
 
-const PONDOK_NAME = "Pondok Pesantren 'Aasyiqul Qur'an";
+const PONDOK_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
 
-const SITE_URL = 'https://asyiq.ponpes.id';
+const SITE_DOMAIN = 'senyum.or.id';
 
-const OFFICIAL_WA = '6285328813960';
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id';
 
-const DISPLAY_WA = '+62 853-2881-3960';
+const OFFICIAL_WA = '6285555555124';
+
+const DISPLAY_WA = '+62 855-5555-5124';
+
+const OFFICIAL_EMAIL = 'darussalammudemak@gmail.com';
 
 const OFFICIAL_ADDRESS =
-  'Jl. Raya Sirampog, Kalijeruk, Mendala, Kec. Sirampog, Kabupaten Brebes, Jawa Tengah 52272';
+  'Jl. Kyai Jebat No. 9, Bintoro, Demak, Jawa Tengah 59511';
+
+const OG_IMAGE =
+  `${SITE_URL}/images/og-banner.jpg`;
 
 // =========================================================
 // SEO METADATA
 // =========================================================
 
 export const metadata: Metadata = {
-  title: "Tentang Kami | Pondok Pesantren 'Aasyiqul Qur'an",
+  title: `Tentang Kami | ${SITE_NAME}`,
 
   description:
-    "Mengenal lebih dekat Pondok Pesantren 'Aasyiqul Qur'an melalui asyiq.ponpes.id. Pesantren yang berkhidmat dalam pendidikan Al-Qur'an, pembinaan santri, dakwah, serta berbagai program kebaikan.",
+    `Mengenal lebih dekat ${SITE_NAME}, ${PONDOK_NAME}. ` +
+    `Pesantren kader Muhammadiyah di Bintoro, Demak yang berfokus pada Al-Qur'an, ` +
+    `Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, dan keterampilan santri.`,
 
   keywords: [
-    'asyiq ponpes',
-    'asyiq.ponpes.id',
-    "pondok pesantren aasyiqul qur'an",
-    'pondok pesantren sirampog',
-    'pondok pesantren brebes',
-    'pesantren al quran brebes',
+    'Pondok Matan Darussalam',
+    'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak',
+    'pesantren Muhammadiyah Demak',
+    'pesantren Bintoro Demak',
+    'Pondok Matan Demak',
+    'pendidikan kader Muhammadiyah',
+    'pesantren tahfidz Demak',
+    'kitab matan pesantren',
+    'Bahasa Arab pesantren',
     'pendidikan santri',
-    'donasi pesantren',
-    'sedekah pesantren',
-    'wakaf pesantren',
+    'senyum.or.id',
   ],
 
   alternates: {
-    canonical: '/tentang-kami',
+    canonical: `${SITE_URL}/tentang-kami`,
   },
 
   openGraph: {
-    title: "Tentang Kami | Pondok Pesantren 'Aasyiqul Qur'an",
+    title: `Tentang Kami | ${SITE_NAME}`,
+
     description:
-      "Mengenal lebih dekat Pondok Pesantren 'Aasyiqul Qur'an, pendidikan santri, dakwah Al-Qur'an, dan berbagai program kebaikan.",
+      `Mengenal ${SITE_NAME}, pesantren kader Muhammadiyah di Bintoro, Demak ` +
+      `dengan pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, dan pembinaan santri.`,
+
     url: `${SITE_URL}/tentang-kami`,
     siteName: SITE_NAME,
+    locale: 'id_ID',
     type: 'website',
+
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        type: 'image/jpeg',
+        alt: `Tentang ${SITE_NAME}`,
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: `Tentang Kami | ${SITE_NAME}`,
+    description:
+      `Profil resmi ${PONDOK_NAME} melalui ${SITE_DOMAIN}.`,
+    images: [OG_IMAGE],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
   },
 };
 
@@ -64,7 +112,7 @@ export const metadata: Metadata = {
 
 export default function TentangKamiPage() {
   const defaultText = encodeURIComponent(
-    "Assalamualaikum Admin asyiq.ponpes.id, saya ingin bertanya mengenai Pondok Pesantren 'Aasyiqul Qur'an."
+    `Assalamu'alaikum Admin ${SITE_NAME}, saya ingin bertanya mengenai ${PONDOK_NAME}.`
   );
 
   const waChatUrl = `https://wa.me/${OFFICIAL_WA}?text=${defaultText}`;
@@ -229,7 +277,7 @@ export default function TentangKamiPage() {
               text-white
             "
           >
-            Membina Generasi Qur&apos;ani,
+            Membina Kader Persyarikatan,
             <span
               className="
                 mt-1
@@ -238,7 +286,7 @@ export default function TentangKamiPage() {
                 text-emerald-300
               "
             >
-              Menebarkan Kebaikan
+              Berilmu, Berakhlak &amp; Berkemajuan
             </span>
           </h1>
 
@@ -258,10 +306,10 @@ export default function TentangKamiPage() {
               text-white/70
             "
           >
-            {SITE_NAME} merupakan media informasi dan layanan digital
-            {` ${PONDOK_NAME}`} untuk menghadirkan informasi pesantren,
-            program pendidikan, kegiatan dakwah, serta berbagai program
-            kebaikan bagi santri dan masyarakat.
+            {SITE_NAME} merupakan identitas digital {PONDOK_NAME},
+            pesantren kader Muhammadiyah di Bintoro, Demak. Website ini
+            menghadirkan informasi pendidikan, kegiatan santri, dakwah,
+            penerimaan santri, serta berbagai program kebaikan pesantren.
           </p>
         </div>
       </section>
@@ -361,10 +409,10 @@ export default function TentangKamiPage() {
               <strong className="font-semibold text-gray-900">
                 {PONDOK_NAME}
               </strong>{' '}
-              merupakan lembaga pendidikan Islam yang berkomitmen dalam
-              pembinaan generasi Qur&apos;ani melalui pendidikan,
-              pembelajaran Al-Qur&apos;an, pembentukan akhlak, serta
-              penguatan nilai-nilai keislaman dalam kehidupan sehari-hari.
+              merupakan bagian dari Amal Usaha Pimpinan Daerah
+              Muhammadiyah Demak yang secara khusus menyiapkan kader
+              persyarikatan melalui pendidikan pesantren yang terpadu,
+              terarah, dan berkesinambungan.
             </p>
 
             <p>
@@ -372,19 +420,19 @@ export default function TentangKamiPage() {
               <strong className="font-semibold text-emerald-600">
                 {SITE_NAME}
               </strong>
-              , kami menghadirkan layanan digital yang memudahkan
-              masyarakat untuk memperoleh informasi mengenai kegiatan
-              pesantren, program pendidikan, dakwah, serta berbagai
-              kesempatan untuk ikut berpartisipasi dalam program
-              kebaikan.
+              , kami menghadirkan layanan digital untuk memudahkan
+              masyarakat memperoleh informasi mengenai pendidikan,
+              penerimaan santri, kegiatan pesantren, dakwah, berita,
+              serta berbagai kesempatan untuk berpartisipasi dalam
+              program kebaikan.
             </p>
 
             <p>
-              Dukungan masyarakat menjadi bagian penting dalam membantu
-              keberlangsungan pendidikan para santri, pengembangan
-              fasilitas, kegiatan dakwah, serta berbagai kebutuhan
-              pesantren. Kami berharap setiap kebaikan yang diberikan
-              menjadi amal yang membawa manfaat berkelanjutan.
+              Salah satu kekhasan Pondok Matan adalah penguatan literatur
+              klasik melalui hafalan matan dan nadzam, disertai pembelajaran
+              Al-Qur&apos;an, Bahasa Arab, ilmu syar&apos;i, pendidikan umum,
+              pembinaan akhlak, kedisiplinan, kemandirian, serta keterampilan
+              hidup dan organisasi.
             </p>
           </div>
 
@@ -465,9 +513,8 @@ export default function TentangKamiPage() {
                   text-gray-500
                 "
               >
-                Menjadi pesantren yang mampu melahirkan generasi
-                Qur&apos;ani, berakhlak mulia, berilmu, mandiri, serta
-                mampu memberikan manfaat bagi agama dan masyarakat.
+                Terwujudnya Kader Persyarikatan yang &apos;Alim Muttaqin,
+                Berakhlak Mulia, Unggul, Terampil dan Berkemajuan.
               </p>
             </div>
 
@@ -538,8 +585,8 @@ export default function TentangKamiPage() {
                   <span className="mt-0.5 text-emerald-500">✓</span>
 
                   <span>
-                    Menyelenggarakan pendidikan Al-Qur&apos;an dan
-                    keislaman secara berkesinambungan.
+                    Membekali santri dengan kemampuan Bahasa Arab,
+                    Ulumus Syar&apos;i, dan pemahaman literatur keislaman.
                   </span>
                 </li>
 
@@ -547,8 +594,8 @@ export default function TentangKamiPage() {
                   <span className="mt-0.5 text-emerald-500">✓</span>
 
                   <span>
-                    Membentuk santri yang berilmu, beradab, dan memiliki
-                    kepedulian sosial.
+                    Membimbing santri dalam hafalan Al-Qur&apos;an,
+                    pembentukan aqidah, akhlak, ibadah, dan kedisiplinan.
                   </span>
                 </li>
 
@@ -556,8 +603,8 @@ export default function TentangKamiPage() {
                   <span className="mt-0.5 text-emerald-500">✓</span>
 
                   <span>
-                    Mengembangkan kegiatan dakwah dan program sosial yang
-                    bermanfaat bagi masyarakat.
+                    Mengembangkan komunikasi Bahasa Arab, kemandirian,
+                    keterampilan hidup, kepemimpinan, dan organisasi santri.
                   </span>
                 </li>
               </ul>
@@ -599,7 +646,7 @@ export default function TentangKamiPage() {
                 text-gray-900
               "
             >
-              Tumbuh Bersama dalam Kebaikan
+              Pendidikan Kader yang Terarah dan Berkelanjutan
             </h2>
 
             <p
@@ -614,10 +661,10 @@ export default function TentangKamiPage() {
                 text-gray-600
               "
             >
-              Kami terus berupaya meningkatkan kualitas pendidikan,
-              pelayanan santri, serta pemanfaatan teknologi untuk
-              mempermudah masyarakat memperoleh informasi dan ikut
-              mendukung berbagai program pesantren.
+              Kami terus berupaya menghadirkan pendidikan yang mengintegrasikan
+              Al-Qur&apos;an, ilmu syar&apos;i, Bahasa Arab, pelajaran umum,
+              pembentukan karakter, kedisiplinan, kemandirian, dan keterampilan
+              agar santri tumbuh menjadi kader persyarikatan yang berkemajuan.
             </p>
           </div>
         </div>
@@ -754,7 +801,7 @@ export default function TentangKamiPage() {
                       text-emerald-950
                     "
                   >
-                    Amanah
+                    Kader Persyarikatan
                   </h4>
 
                   <p
@@ -768,8 +815,8 @@ export default function TentangKamiPage() {
                       text-emerald-800/70
                     "
                   >
-                    Menjaga kepercayaan masyarakat dalam setiap program
-                    dan dukungan yang diberikan.
+                    Menyiapkan santri yang berilmu, berakhlak,
+                    bertanggung jawab, dan siap berkhidmat di Persyarikatan.
                   </p>
                 </div>
               </div>
@@ -811,7 +858,7 @@ export default function TentangKamiPage() {
                       text-emerald-950
                     "
                   >
-                    Pendidikan
+                    Ilmu &amp; Al-Qur&apos;an
                   </h4>
 
                   <p
@@ -825,8 +872,8 @@ export default function TentangKamiPage() {
                       text-emerald-800/70
                     "
                   >
-                    Menjadikan pendidikan Al-Qur&apos;an dan pembentukan
-                    akhlak sebagai bagian utama pembinaan santri.
+                    Menguatkan hafalan Al-Qur&apos;an, Bahasa Arab,
+                    ilmu syar&apos;i, kitab matan, dan pendidikan umum.
                   </p>
                 </div>
               </div>
@@ -868,7 +915,7 @@ export default function TentangKamiPage() {
                       text-emerald-950
                     "
                   >
-                    Kepedulian
+                    Mandiri &amp; Terampil
                   </h4>
 
                   <p
@@ -882,8 +929,8 @@ export default function TentangKamiPage() {
                       text-emerald-800/70
                     "
                   >
-                    Menumbuhkan semangat berbagi dan kepedulian terhadap
-                    santri serta masyarakat sekitar.
+                    Membiasakan kedisiplinan, kemandirian, kecakapan hidup,
+                    komunikasi, kepemimpinan, dan organisasi.
                   </p>
                 </div>
               </div>
@@ -1010,7 +1057,33 @@ export default function TentangKamiPage() {
                     hover:text-emerald-700
                   "
                 >
-                  {SITE_NAME}
+                  {SITE_DOMAIN}
+                </a>
+              </div>
+
+              {/* Email */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm">
+                  ✉️
+                </span>
+
+                <a
+                  href={`mailto:${OFFICIAL_EMAIL}`}
+                  className="
+                    break-all
+
+                    text-[11px]
+
+                    font-semibold
+
+                    text-emerald-600
+
+                    transition
+
+                    hover:text-emerald-700
+                  "
+                >
+                  {OFFICIAL_EMAIL}
                 </a>
               </div>
             </div>
@@ -1144,7 +1217,7 @@ export default function TentangKamiPage() {
               text-gray-900
             "
           >
-            Mari Bersama Menanam Kebaikan
+            Mari Mendukung Pendidikan Para Santri
           </h2>
 
           <p
@@ -1162,9 +1235,9 @@ export default function TentangKamiPage() {
               text-gray-500
             "
           >
-            Dukungan Anda dapat menjadi bagian dari perjalanan
-            pendidikan para santri, pengembangan dakwah Al-Qur&apos;an,
-            dan berbagai program kebaikan yang terus memberikan manfaat.
+            Dukungan Anda dapat menjadi bagian dari perjalanan pendidikan
+            para santri, penguatan tahfidz Al-Qur&apos;an, pembinaan kader,
+            pengembangan fasilitas, dan berbagai program kebaikan pesantren.
           </p>
 
           <div

@@ -11,9 +11,16 @@ import { createClient } from 'next-sanity';
 // IDENTITAS WEBSITE
 // =========================================================
 
-const SITE_NAME = 'asyiq.ponpes.id';
-const SITE_URL = 'https://asyiq.ponpes.id';
-const PONDOK_NAME = "Pondok Pesantren 'Aasyiqul Qur'an";
+const SITE_NAME = 'Pondok Matan Darussalam';
+
+const SITE_DOMAIN = 'senyum.or.id';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id';
+
+const PONDOK_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
 
 // =========================================================
 // SANITY CLIENT
@@ -28,7 +35,7 @@ const sanityClient = createClient({
     process.env.NEXT_PUBLIC_SANITY_DATASET ||
     'production',
 
-  apiVersion: '2026-06-20',
+  apiVersion: '2026-09-26',
   useCdn: false,
 });
 
@@ -40,17 +47,20 @@ export const metadata: Metadata = {
   title: `Peta Situs | ${SITE_NAME}`,
 
   description:
-    `Peta situs resmi ${SITE_NAME} untuk memudahkan akses ke halaman utama, program donasi, profil ${PONDOK_NAME}, kontak, berita, kegiatan, dan berbagai program kebaikan.`,
+    `Peta situs resmi ${SITE_NAME} untuk memudahkan akses ke halaman utama, program pesantren, program donasi, profil ${PONDOK_NAME}, kontak, berita, kegiatan santri, dan berbagai program kebaikan.`,
 
   keywords: [
-    'peta situs asyiq ponpes',
-    'sitemap asyiq ponpes',
-    'asyiq.ponpes.id',
-    "pondok pesantren aasyiqul qur'an",
-    'pondok pesantren sirampog',
-    'pondok pesantren brebes',
+    'peta situs Pondok Matan Darussalam',
+    'sitemap Pondok Matan Darussalam',
+    'senyum.or.id',
+    'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak',
+    'Pondok Matan Demak',
+    'pesantren Muhammadiyah Demak',
+    'pesantren Bintoro Demak',
     'program donasi pesantren',
+    'program kebaikan pesantren',
     'berita pesantren',
+    'kegiatan santri',
   ],
 
   alternates: {
@@ -74,12 +84,30 @@ export const metadata: Metadata = {
     title: `Peta Situs | ${SITE_NAME}`,
 
     description:
-      `Akses seluruh halaman, program kebaikan, berita, dan informasi ${PONDOK_NAME} melalui peta situs resmi ${SITE_NAME}.`,
+      `Akses seluruh halaman, program kebaikan, berita, kegiatan santri, dan informasi ${PONDOK_NAME} melalui peta situs resmi ${SITE_NAME}.`,
 
     url: `${SITE_URL}/peta-situs`,
     siteName: SITE_NAME,
     locale: 'id_ID',
     type: 'website',
+
+    images: [
+      {
+        url: `${SITE_URL}/images/og-banner.jpg`,
+        width: 1200,
+        height: 630,
+        type: 'image/jpeg',
+        alt: `Peta Situs ${SITE_NAME}`,
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: `Peta Situs | ${SITE_NAME}`,
+    description:
+      `Akses halaman, program, berita, kegiatan santri, dan informasi resmi ${SITE_NAME}.`,
+    images: [`${SITE_URL}/images/og-banner.jpg`],
   },
 };
 
@@ -152,7 +180,7 @@ export default async function PetaSitusPage() {
   const halamanInti = [
     {
       title: 'Beranda',
-      description: 'Halaman utama website pesantren',
+      description: 'Halaman utama Pondok Matan Darussalam',
       url: '/',
     },
     {
@@ -161,14 +189,24 @@ export default async function PetaSitusPage() {
       url: '/program',
     },
     {
+      title: 'Berita & Artikel',
+      description: 'Berita, artikel, dan kegiatan pesantren',
+      url: '/blog',
+    },
+    {
       title: 'Tentang Kami',
-      description: 'Profil Pondok Pesantren',
+      description: 'Profil Pondok Matan Darussalam',
       url: '/tentang-kami',
     },
     {
       title: 'Hubungi Kami',
-      description: 'Alamat dan layanan informasi',
+      description: 'Alamat dan layanan informasi resmi',
       url: '/kontak',
+    },
+    {
+      title: 'Kebijakan Privasi',
+      description: 'Informasi perlindungan data pengguna',
+      url: '/kebijakan-privasi',
     },
     {
       title: 'Peta Situs',
@@ -1022,7 +1060,7 @@ export default async function PetaSitusPage() {
                       text-gray-900
                     "
                   >
-                    Berita & Kegiatan
+                    Berita & Artikel
 
                     <span
                       className="
@@ -1059,7 +1097,7 @@ export default async function PetaSitusPage() {
                 "
               >
                 {news.map((item) => {
-                  const url = `/news/${item.slug}`;
+                  const url = `/blog/${item.slug}`;
 
                   return (
                     <li key={item.slug}>

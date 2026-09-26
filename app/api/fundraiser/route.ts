@@ -7,7 +7,12 @@ import { clientInternal as client } from '@/lib/sanity';
 // CONFIG
 // ============================================================================
 
-const SITE_NAME = 'asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
+
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
+
+const SITE_URL = 'https://senyum.or.id';
 
 // ============================================================================
 // HELPERS
@@ -17,6 +22,7 @@ const SITE_NAME = 'asyiq.ponpes.id';
  * Normalisasi nomor WhatsApp Indonesia ke format internasional.
  *
  * Contoh:
+ *
  * 08123456789   -> 628123456789
  * +628123456789 -> 628123456789
  * 628123456789  -> 628123456789
@@ -272,26 +278,43 @@ export async function POST(request: Request) {
     // 9. KIRIM NOTIFIKASI WHATSAPP VIA FONNTE
     // =========================================================================
     //
-    // Kegagalan WhatsApp tidak boleh membatalkan pendaftaran karena data
-    // fundraiser sudah berhasil masuk ke Sanity.
+    // Kegagalan pengiriman WhatsApp tidak membatalkan proses pendaftaran.
+    //
+    // Data fundraiser yang telah tersimpan di Sanity tetap dianggap berhasil.
     //
     // =========================================================================
 
     if (process.env.FONNTE_TOKEN) {
       try {
         const programTitle =
-          programExists.title || 'program kebaikan';
+          programExists.title || 'Program Kebaikan';
 
         const messageText =
           `*Pendaftaran Fundraiser ${SITE_NAME}* 📢\n\n` +
-          `Assalamu'alaikum *${rawName}*,\n\n` +
-          `Terima kasih telah mendaftarkan diri sebagai fundraiser di ${SITE_NAME}.\n\n` +
+
+          `Assalamu'alaikum Warahmatullahi Wabarakatuh.\n\n` +
+
+          `Yth. *${rawName}*,\n\n` +
+
+          `Terima kasih telah mendaftarkan diri sebagai fundraiser di *${SITE_NAME}*.\n\n` +
+
           `Pengajuan Anda untuk program:\n` +
+
           `*${programTitle}*\n\n` +
-          `telah kami terima dan saat ini sedang menunggu proses verifikasi oleh tim admin.\n\n` +
-          `Setelah akun fundraiser Anda disetujui, kami akan mengirimkan informasi lanjutan beserta tautan fundraiser yang dapat Anda gunakan untuk mengajak keluarga, sahabat, dan masyarakat ikut berpartisipasi dalam program ini.\n\n` +
+
+          `telah kami terima dan saat ini sedang menunggu proses verifikasi dari tim admin.\n\n` +
+
+          `Setelah pengajuan disetujui, kami akan mengirimkan informasi lanjutan beserta tautan fundraiser yang dapat Anda gunakan untuk mengajak keluarga, sahabat, dan masyarakat ikut berpartisipasi dalam program kebaikan ini.\n\n` +
+
+          `Semoga ikhtiar ini menjadi bagian dari amal jariyah dan memberikan manfaat bagi pendidikan serta pembinaan para santri.\n\n` +
+
           `Jazakumullahu khairan katsiran atas partisipasi dan kepeduliannya.\n\n` +
-          `_${SITE_NAME}_`;
+
+          `Wassalamu'alaikum Warahmatullahi Wabarakatuh.\n\n` +
+
+          `*${SITE_NAME}*\n` +
+          `${OFFICIAL_NAME}\n` +
+          `${SITE_URL}`;
 
         const fonnteResponse = await fetch(
           'https://api.fonnte.com/send',
@@ -300,6 +323,7 @@ export async function POST(request: Request) {
 
             headers: {
               Authorization: process.env.FONNTE_TOKEN,
+
               'Content-Type':
                 'application/x-www-form-urlencoded',
             },
@@ -319,7 +343,9 @@ export async function POST(request: Request) {
 
         if (!fonnteResponse.ok) {
           const errorText =
-            await fonnteResponse.text().catch(() => '');
+            await fonnteResponse
+              .text()
+              .catch(() => '');
 
           console.error(
             `[${SITE_NAME}] Fonnte gagal mengirim WhatsApp:`,
@@ -335,6 +361,10 @@ export async function POST(request: Request) {
           fonnteError
         );
       }
+    } else {
+      console.warn(
+        `[${SITE_NAME}] FONNTE_TOKEN belum tersedia. Notifikasi WhatsApp dilewati.`
+      );
     }
 
     // =========================================================================

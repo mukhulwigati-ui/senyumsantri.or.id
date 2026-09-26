@@ -8,9 +8,11 @@ import Link from 'next/link';
 // SITE CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_DOMAIN = 'www.asyiq.ponpes.id';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
+const SITE_DOMAIN = 'senyum.or.id';
+const SITE_URL = 'https://senyum.or.id';
 
 // ============================================================================
 // METADATA
@@ -25,12 +27,15 @@ export const metadata: Metadata = {
     `donatur dan pengguna layanan melalui ${SITE_DOMAIN}.`,
 
   keywords: [
-    'kebijakan privasi Asyiqul Quran',
-    'privasi Asyiqul Quran',
+    'kebijakan privasi Pondok Matan Darussalam',
+    'privasi Pondok Matan Darussalam',
+    'kebijakan privasi senyum.or.id',
+    'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak',
     'keamanan data donatur',
     'perlindungan data donatur',
-    'asyiq.ponpes.id',
-    'donasi Asyiqul Quran',
+    'perlindungan data pengguna',
+    'senyum.or.id',
+    'donasi Pondok Matan Darussalam',
   ],
 
   alternates: {
@@ -79,7 +84,7 @@ export default function KebijakanPrivasiPage() {
           </h1>
 
           <p className="text-xs text-gray-400 font-medium">
-            Terakhir diperbarui: 24 September 2026
+            Terakhir diperbarui: 26 September 2026
           </p>
 
         </header>
@@ -91,7 +96,8 @@ export default function KebijakanPrivasiPage() {
         <section className="text-gray-700 text-sm md:text-base leading-relaxed space-y-4">
 
           <p>
-            <strong>{SITE_NAME}</strong> melalui website resmi{' '}
+            <strong>{SITE_NAME}</strong>, bagian dari{' '}
+            <strong>{OFFICIAL_NAME}</strong>, melalui website resmi{' '}
             <strong>{SITE_DOMAIN}</strong> menghargai privasi setiap
             pengguna, donatur, fundraiser, dan pihak lain yang menggunakan
             layanan kami.
@@ -508,7 +514,7 @@ export default function KebijakanPrivasiPage() {
                 href="/kontak"
                 className="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-none transition-colors"
               >
-                Hubungi Asyiqul Quran
+                Hubungi Pondok Matan
               </Link>
 
             </div>
@@ -528,10 +534,10 @@ export default function KebijakanPrivasiPage() {
           </h2>
 
           <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-            {SITE_NAME} berupaya mengelola data pribadi dengan memperhatikan
-            prinsip pelindungan data pribadi dan ketentuan hukum yang berlaku
-            di Indonesia, termasuk ketentuan mengenai Pelindungan Data
-            Pribadi.
+            {SITE_NAME} sebagai bagian dari {OFFICIAL_NAME} berupaya
+            mengelola data pribadi dengan memperhatikan prinsip pelindungan
+            data pribadi dan ketentuan hukum yang berlaku di Indonesia,
+            termasuk ketentuan mengenai Pelindungan Data Pribadi.
           </p>
 
         </section>

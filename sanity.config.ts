@@ -32,13 +32,13 @@ export default defineConfig([
     // WORKSPACE
     // =====================================================
 
-    name: 'asyiq-ponpes-id',
+    name: 'senyum-or-id',
 
-    title: 'Asyiqul Quran',
+    title: 'Pondok Matan Darussalam',
 
     projectId:
       process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
-      'ID_PROJECT_ANDA',
+      'lsnco71s',
 
     dataset:
       process.env.NEXT_PUBLIC_SANITY_DATASET ||
@@ -54,7 +54,7 @@ export default defineConfig([
       structureTool({
         structure: (S) =>
           S.list()
-            .title('Content')
+            .title('Konten Pondok Matan')
             .items([
               // =================================================
               // 1. PROGRAM DONASI
@@ -353,36 +353,104 @@ export default defineConfig([
 
               {
                 style: {
-                  background: '#e6f7f0',
+                  background:
+                    'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 55%, #ffffff 100%)',
 
-                  padding: '16px 24px',
+                  padding: '14px 20px',
 
                   display: 'flex',
                   alignItems: 'center',
+                  gap: '12px',
 
                   borderBottom:
-                    '1px solid #c2ebd9',
+                    '1px solid #d1fae5',
 
                   boxShadow:
                     '0 1px 2px rgba(0,0,0,0.02)',
                 },
               },
 
-              React.createElement('img', {
-                src: '/images/asyiq.png',
+              React.createElement(
+                'div',
 
-                alt: 'Logo asyiq.ponpes.id',
+                {
+                  style: {
+                    width: '42px',
+                    height: '42px',
 
-                style: {
-                  height: '52px',
+                    borderRadius: '12px',
 
-                  width: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
 
-                  objectFit: 'contain',
+                    background: '#059669',
+                    color: '#ffffff',
 
-                  display: 'block',
+                    fontSize: '18px',
+                    fontWeight: 800,
+
+                    boxShadow:
+                      '0 8px 20px rgba(5,150,105,0.18)',
+                  },
                 },
-              })
+
+                'M'
+              ),
+
+              React.createElement(
+                'div',
+
+                {
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minWidth: 0,
+                  },
+                },
+
+                React.createElement(
+                  'strong',
+
+                  {
+                    style: {
+                      color: '#111827',
+
+                      fontSize: '14px',
+                      lineHeight: '1.35',
+
+                      fontWeight: 800,
+
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
+                  },
+
+                  'Pondok Matan Darussalam'
+                ),
+
+                React.createElement(
+                  'span',
+
+                  {
+                    style: {
+                      marginTop: '2px',
+
+                      color: '#059669',
+
+                      fontSize: '11px',
+                      lineHeight: '1.4',
+
+                      fontWeight: 700,
+
+                      letterSpacing: '0.02em',
+                    },
+                  },
+
+                  'senyum.or.id'
+                )
+              )
             ),
 
             // ===============================================

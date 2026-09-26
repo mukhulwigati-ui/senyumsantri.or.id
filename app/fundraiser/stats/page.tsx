@@ -30,13 +30,20 @@ import {
 // IDENTITAS WEBSITE
 // ==========================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = 'Pondok Matan Darussalam';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyum.or.id';
 
 // Session hanya disimpan selama tab/browser session aktif.
 // sessionStorage tetap bertahan saat refresh, tetapi akan hilang ketika
 // sesi browser ditutup sehingga lebih aman daripada localStorage.
-const FUNDRAISER_SESSION_KEY = 'asyiq_fundraiser_phone';
+const FUNDRAISER_SESSION_KEY = 'senyum_fundraiser_phone';
+
+// Key lama dipertahankan sementara untuk memigrasikan sesi pengguna
+// dari identitas/domain lama agar tidak langsung logout setelah rebranding.
+const LEGACY_FUNDRAISER_SESSION_KEY = 'asyiq_fundraiser_phone';
 
 // ==========================================================
 // TYPES
@@ -382,6 +389,10 @@ export default function FundraiserStatsPage() {
             FUNDRAISER_SESSION_KEY,
             canonicalPhone
           );
+
+          window.sessionStorage.removeItem(
+            LEGACY_FUNDRAISER_SESSION_KEY
+          );
         } catch (storageError) {
           console.warn(
             `[${SITE_NAME}] Session fundraiser tidak dapat disimpan:`,
@@ -425,10 +436,27 @@ export default function FundraiserStatsPage() {
         const savedPhone =
           window.sessionStorage.getItem(
             FUNDRAISER_SESSION_KEY
+          ) ||
+          window.sessionStorage.getItem(
+            LEGACY_FUNDRAISER_SESSION_KEY
           );
 
         if (!savedPhone) {
           return;
+        }
+
+        // Migrasikan session lama ke key baru senyum.or.id.
+        try {
+          window.sessionStorage.setItem(
+            FUNDRAISER_SESSION_KEY,
+            savedPhone
+          );
+
+          window.sessionStorage.removeItem(
+            LEGACY_FUNDRAISER_SESSION_KEY
+          );
+        } catch {
+          // Abaikan jika browser memblokir sessionStorage.
         }
 
         setPhone(savedPhone);
@@ -441,6 +469,10 @@ export default function FundraiserStatsPage() {
         if (!success) {
           window.sessionStorage.removeItem(
             FUNDRAISER_SESSION_KEY
+          );
+
+          window.sessionStorage.removeItem(
+            LEGACY_FUNDRAISER_SESSION_KEY
           );
 
           if (active) {
@@ -456,6 +488,10 @@ export default function FundraiserStatsPage() {
         try {
           window.sessionStorage.removeItem(
             FUNDRAISER_SESSION_KEY
+          );
+
+          window.sessionStorage.removeItem(
+            LEGACY_FUNDRAISER_SESSION_KEY
           );
         } catch {
           // Abaikan error storage pada browser yang memblokir storage.
@@ -508,6 +544,10 @@ export default function FundraiserStatsPage() {
     try {
       window.sessionStorage.removeItem(
         FUNDRAISER_SESSION_KEY
+      );
+
+      window.sessionStorage.removeItem(
+        LEGACY_FUNDRAISER_SESSION_KEY
       );
     } catch {
       // Abaikan bila browser memblokir sessionStorage.
