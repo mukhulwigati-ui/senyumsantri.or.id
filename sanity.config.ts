@@ -105,7 +105,19 @@ export default defineConfig([
                 ),
 
               // =================================================
-              // 5. DONATION TRANSACTION
+              // 5. SLIDER HOMEPAGE
+              // =================================================
+
+              S.listItem()
+                .title('Slider Homepage')
+                .child(
+                  S.documentTypeList('slider').title(
+                    'Slider Homepage'
+                  )
+                ),
+
+              // =================================================
+              // 6. DONATION TRANSACTION
               // =================================================
 
               S.listItem()
@@ -127,7 +139,7 @@ export default defineConfig([
               S.divider(),
 
               // =================================================
-              // 6. PENDAFTARAN FUNDRAISER
+              // 7. PENDAFTARAN FUNDRAISER
               // =================================================
 
               S.listItem()
@@ -141,7 +153,7 @@ export default defineConfig([
                 ),
 
               // =================================================
-              // 7. PENARIKAN KOMISI FUNDRAISER
+              // 8. PENARIKAN KOMISI FUNDRAISER
               // =================================================
 
               S.listItem()
@@ -448,7 +460,7 @@ export default defineConfig([
                     },
                   },
 
-                  'senyum.or.id'
+                  'senyumsantri.or.id'
                 )
               )
             ),
