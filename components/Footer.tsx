@@ -110,16 +110,19 @@ export default function Footer() {
         className="
           mx-auto
           w-full
-          max-w-5xl
+          max-w-[1120px]
 
-          px-4
+          px-3
           pb-10
           pt-14
 
-          sm:px-6
+          sm:px-5
 
+          md:px-8
           md:pb-12
           md:pt-16
+
+          lg:px-10
         "
       >
 
@@ -145,20 +148,16 @@ export default function Footer() {
               ================================================================= */}
 
           <div className="sm:col-span-2 lg:col-span-1">
-
-            {/* WORDMARK */}
+            {/* LOGO */}
 
             <Link
               href="/"
               aria-label={`${SITE_NAME} - Beranda`}
               className="
                 group
+
                 inline-flex
-                items-baseline
-
-                whitespace-nowrap
-
-                tracking-[-0.055em]
+                items-center
 
                 transition-opacity
                 duration-300
@@ -166,31 +165,26 @@ export default function Footer() {
                 hover:opacity-80
               "
             >
-
-              <span
+              <img
+                src="/images/logo-senyum.png"
+                alt={`Logo ${SITE_NAME}`}
+                width={1200}
+                height={220}
+                loading="eager"
+                decoding="async"
                 className="
-                  text-[23px]
-                  font-extrabold
-                  leading-none
+                  block
+                  h-auto
+                  w-[180px]
 
-                  text-emerald-800
+                  object-contain
+                  object-left
+
+                  sm:w-[200px]
+
+                  lg:w-[220px]
                 "
-              >
-                senyumsantri
-              </span>
-
-              <span
-                className="
-                  text-[23px]
-                  font-bold
-                  leading-none
-
-                  text-lime-600
-                "
-              >
-                .or.id
-              </span>
-
+              />
             </Link>
 
             {/* PONDOK */}

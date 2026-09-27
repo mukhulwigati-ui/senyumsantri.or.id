@@ -9,6 +9,7 @@ import laporan from './laporan';
 import category from './category';
 import news from './news';
 import donationTransaction from './donationTransaction';
+import slider from './slider';
 
 // =========================================================
 // SCHEMA FUNDRAISER
@@ -38,6 +39,8 @@ export const schemaTypes = [
   news,
 
   donationTransaction,
+
+  slider,
 
   // =======================================================
   // FUNDRAISER

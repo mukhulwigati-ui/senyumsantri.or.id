@@ -1,7 +1,12 @@
 'use client';
 
-import React, { FormEvent, useState } from 'react';
+import React, {
+  FormEvent,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import {
   usePathname,
   useRouter,
@@ -52,7 +57,10 @@ export default function Header() {
   const pathname =
     usePathname();
 
-  const [searchQuery, setSearchQuery] =
+  const [
+    searchQuery,
+    setSearchQuery,
+  ] =
     useState('');
 
   // ==========================================================================
@@ -60,9 +68,9 @@ export default function Header() {
   // ==========================================================================
 
   const handleSearchSubmit = (
-    e: FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
   ) => {
-    e.preventDefault();
+    event.preventDefault();
 
     const query =
       searchQuery.trim();
@@ -72,7 +80,9 @@ export default function Header() {
     }
 
     router.push(
-      `/search?q=${encodeURIComponent(query)}`
+      `/search?q=${encodeURIComponent(
+        query
+      )}`
     );
 
     setSearchQuery('');
@@ -91,7 +101,9 @@ export default function Header() {
 
     return (
       pathname === href ||
-      pathname.startsWith(`${href}/`)
+      pathname.startsWith(
+        `${href}/`
+      )
     );
   };
 
@@ -111,16 +123,16 @@ export default function Header() {
         border-b
         border-gray-100/80
 
-        bg-white/85
+        bg-white/95
 
         shadow-[0_1px_12px_rgba(15,23,42,0.035)]
 
         backdrop-blur-xl
       "
     >
-
       {/* =====================================================================
-          MAIN CONTAINER
+          CONTAINER
+          Lebar disamakan dengan Hero / konten website
           ===================================================================== */}
 
       <div
@@ -130,91 +142,63 @@ export default function Header() {
           flex
           h-16
           w-full
-          max-w-5xl
+          max-w-[1120px]
 
           items-center
           justify-between
 
-          gap-3
+          gap-4
 
-          px-4
+          px-3
 
-          sm:px-6
+          sm:px-5
 
           md:h-20
+          md:px-8
+
+          lg:px-10
         "
       >
-
         {/* ===================================================================
-            WORDMARK / LOGO
+            LOGO
             =================================================================== */}
 
         <Link
           href="/"
           aria-label={`${SITE_NAME} - Beranda`}
           className="
-            group
             flex
-            min-w-0
             shrink-0
             items-center
+
+            transition-opacity
+            duration-200
+
+            hover:opacity-80
           "
         >
-
-          <div
+          <img
+            src="/images/logo-senyum.png"
+            alt={`Logo ${SITE_NAME}`}
+            width={1200}
+            height={220}
+            loading="eager"
+            decoding="sync"
+            fetchPriority="high"
             className="
-              flex
-              items-baseline
+              block
 
-              whitespace-nowrap
+              h-[30px]
+              w-auto
 
-              tracking-[-0.055em]
+              object-contain
+              object-left
 
-              transition-opacity
-              duration-300
+              sm:h-[34px]
 
-              group-hover:opacity-80
+              md:h-[38px]
             "
-          >
-
-            {/* senyumsantri */}
-
-            <span
-              className="
-                text-[20px]
-                font-extrabold
-                leading-none
-
-                text-emerald-800
-
-                sm:text-[22px]
-
-                md:text-[25px]
-              "
-            >
-              senyumsantri
-            </span>
-
-            {/* .or.id */}
-
-            <span
-              className="
-                text-[20px]
-                font-bold
-                leading-none
-
-                text-lime-600
-
-                sm:text-[22px]
-
-                md:text-[25px]
-              "
-            >
-              .or.id
-            </span>
-
-          </div>
-
+          />
         </Link>
 
         {/* ===================================================================
@@ -240,16 +224,21 @@ export default function Header() {
             md:flex
           "
         >
-
           {navigation.map(
             (item) => {
               const active =
-                isActive(item.href);
+                isActive(
+                  item.href
+                );
 
               return (
                 <Link
-                  key={item.href}
-                  href={item.href}
+                  key={
+                    item.href
+                  }
+                  href={
+                    item.href
+                  }
                   className={`
                     whitespace-nowrap
 
@@ -259,7 +248,6 @@ export default function Header() {
                     py-2
 
                     text-[11px]
-
                     font-bold
 
                     transition-all
@@ -269,13 +257,17 @@ export default function Header() {
                       active
                         ? `
                           bg-white
+
                           text-emerald-700
+
                           shadow-sm
+
                           ring-1
                           ring-gray-100
                         `
                         : `
                           text-gray-500
+
                           hover:bg-white/70
                           hover:text-emerald-700
                         `
@@ -287,7 +279,6 @@ export default function Header() {
               );
             }
           )}
-
         </nav>
 
         {/* ===================================================================
@@ -295,12 +286,12 @@ export default function Header() {
             =================================================================== */}
 
         <form
-          onSubmit={handleSearchSubmit}
+          onSubmit={
+            handleSearchSubmit
+          }
           role="search"
           className="
             relative
-
-            ml-auto
 
             w-full
             max-w-[125px]
@@ -310,7 +301,6 @@ export default function Header() {
             md:max-w-[175px]
           "
         >
-
           <label
             htmlFor="header-search"
             className="sr-only"
@@ -321,10 +311,14 @@ export default function Header() {
           <input
             id="header-search"
             type="search"
-            value={searchQuery}
-            onChange={(e) =>
+            value={
+              searchQuery
+            }
+            onChange={(
+              event
+            ) =>
               setSearchQuery(
-                e.target.value
+                event.target.value
               )
             }
             placeholder="Cari..."
@@ -393,7 +387,6 @@ export default function Header() {
               hover:text-emerald-600
             "
           >
-
             <Search
               className="
                 h-3.5
@@ -401,13 +394,9 @@ export default function Header() {
               "
               strokeWidth={2.4}
             />
-
           </button>
-
         </form>
-
       </div>
-
     </header>
   );
 }

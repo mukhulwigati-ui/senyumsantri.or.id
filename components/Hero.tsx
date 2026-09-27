@@ -1,4 +1,3 @@
-// app/components/Hero.tsx
 'use client';
 
 import React from 'react';
@@ -33,16 +32,16 @@ export default function Hero() {
     >
       {/* =====================================================
           HERO CONTAINER
-          Lebih sempit dan mengikuti lebar konten website
+          Mengikuti lebar konten website
       ===================================================== */}
       <div
         className="
           relative
           isolate
 
+          mx-auto
           w-full
           max-w-[1120px]
-          mx-auto
 
           min-h-[620px]
           sm:min-h-[640px]
@@ -54,9 +53,11 @@ export default function Hero() {
           rounded-[20px]
           md:rounded-[26px]
 
-          bg-[#06130e]
+          bg-[#f7faf8]
 
           shadow-[0_18px_50px_rgba(15,23,42,0.08)]
+          ring-1
+          ring-black/5
         "
       >
         {/* =====================================================
@@ -65,7 +66,7 @@ export default function Hero() {
         <div className="absolute inset-0 -z-30">
           <Image
             src="/images/hero-bg.png"
-            alt="Pondok Pesantren Aasyiqul Qur'an"
+            alt="Pondok Matan Darussalam"
             fill
             priority
             sizes="
@@ -76,7 +77,7 @@ export default function Hero() {
             className="
               object-cover
 
-              object-[56%_center]
+              object-[58%_center]
               sm:object-center
               lg:object-[center_48%]
             "
@@ -84,9 +85,9 @@ export default function Hero() {
         </div>
 
         {/* =====================================================
-            OVERLAY HORIZONTAL
-            Gelap di kiri untuk teks,
-            sangat tipis di kanan supaya foto tetap terlihat
+            OVERLAY UTAMA
+            Full gradasi putih / transparan
+            Kecuali sebagian kanan dibuat jauh lebih terbuka
         ===================================================== */}
         <div
           className="
@@ -94,17 +95,13 @@ export default function Hero() {
             inset-0
             -z-20
 
-            bg-gradient-to-r
-
-            from-[#03140e]/90
-            via-[#03140e]/48
-            to-transparent
+            bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.94)_20%,rgba(255,255,255,0.88)_38%,rgba(255,255,255,0.72)_52%,rgba(255,255,255,0.42)_68%,rgba(255,255,255,0.10)_82%,rgba(255,255,255,0.00)_100%)]
           "
         />
 
         {/* =====================================================
             OVERLAY VERTICAL
-            Sangat lembut
+            Putih lembut dari atas & bawah
         ===================================================== */}
         <div
           className="
@@ -112,33 +109,28 @@ export default function Hero() {
             inset-0
             -z-20
 
-            bg-gradient-to-b
-
-            from-black/[0.04]
-            via-transparent
-            to-[#02110b]/35
+            bg-[linear-gradient(180deg,rgba(255,255,255,0.34)_0%,rgba(255,255,255,0.06)_28%,rgba(255,255,255,0.00)_48%,rgba(255,255,255,0.14)_78%,rgba(255,255,255,0.34)_100%)]
           "
         />
 
         {/* =====================================================
-            AMBIENT GREEN
+            HIGHLIGHT SOFT
         ===================================================== */}
         <div
           className="
             absolute
+            -left-24
+            top-20
             -z-10
 
-            -left-32
-            top-32
-
-            w-[420px]
-            h-[420px]
+            h-[380px]
+            w-[380px]
 
             rounded-full
 
-            bg-emerald-500/[0.06]
+            bg-emerald-400/[0.10]
 
-            blur-[120px]
+            blur-[110px]
 
             pointer-events-none
           "
@@ -152,15 +144,14 @@ export default function Hero() {
             relative
             z-10
 
-            w-full
-
+            flex
             min-h-[620px]
+            w-full
+            items-center
+
             sm:min-h-[640px]
             md:min-h-[650px]
             lg:min-h-[660px]
-
-            flex
-            items-center
           "
         >
           <div
@@ -168,15 +159,16 @@ export default function Hero() {
               w-full
 
               px-5
-              sm:px-7
-              md:px-9
-              lg:px-12
-
               pt-16
               pb-16
 
+              sm:px-7
               sm:pt-20
               sm:pb-20
+
+              md:px-9
+
+              lg:px-12
             "
           >
             <div className="max-w-[570px]">
@@ -185,49 +177,49 @@ export default function Hero() {
               ================================================= */}
               <div
                 className="
-                  inline-flex
-                  items-center
+                  mb-6
 
+                  inline-flex
+                  max-w-full
+                  items-center
                   gap-2.5
 
-                  max-w-full
+                  rounded-full
 
-                  mb-6
+                  border
+                  border-white/95
+
+                  bg-white/78
 
                   px-3
                   py-2
 
-                  rounded-full
-
-                  bg-white/[0.10]
-
-                  border
-                  border-white/[0.14]
-
                   backdrop-blur-xl
 
-                  shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+                  shadow-[0_12px_30px_rgba(15,23,42,0.08)]
                 "
               >
                 <div
                   className="
                     relative
 
-                    w-8
                     h-8
+                    w-8
 
                     shrink-0
 
+                    overflow-hidden
                     rounded-full
 
                     bg-white
 
-                    overflow-hidden
+                    ring-1
+                    ring-black/5
                   "
                 >
                   <Image
-                    src="/images/logo-lazisku.png"
-                    alt="Logo Pondok Pesantren Aasyiqul Qur'an"
+                    src="/images/logo-matan.png"
+                    alt="Logo Pondok Matan Darussalam"
                     fill
                     sizes="32px"
                     className="object-contain p-1"
@@ -236,16 +228,16 @@ export default function Hero() {
 
                 <span
                   className="
-                    w-1.5
                     h-1.5
+                    w-1.5
 
                     shrink-0
 
                     rounded-full
 
-                    bg-emerald-400
+                    bg-emerald-500
 
-                    shadow-[0_0_8px_rgba(52,211,153,0.7)]
+                    shadow-[0_0_8px_rgba(16,185,129,0.65)]
                   "
                 />
 
@@ -254,19 +246,17 @@ export default function Hero() {
                     truncate
 
                     text-[9px]
-                    sm:text-[10px]
-                    md:text-[11px]
-
                     font-semibold
-
+                    uppercase
                     tracking-[0.11em]
 
-                    text-emerald-50
+                    text-emerald-700
 
-                    uppercase
+                    sm:text-[10px]
+                    md:text-[11px]
                   "
                 >
-                  Pondok Pesantren &apos;Aasyiqul Qur&apos;an
+                  Pondok Matan Darussalam
                 </span>
               </div>
 
@@ -276,35 +266,32 @@ export default function Hero() {
               <h1
                 className="
                   text-[36px]
+                  font-bold
+                  leading-[1.04]
+                  tracking-[-0.04em]
+
+                  text-[#163126]
+
                   sm:text-[42px]
                   md:text-[48px]
                   lg:text-[52px]
-
-                  leading-[1.04]
-
-                  tracking-[-0.04em]
-
-                  font-bold
-
-                  text-white
                 "
               >
                 Bersama Membina
 
-                <span className="block mt-1">
+                <span className="mt-1 block">
                   Generasi{' '}
 
                   <span
                     className="
                       text-transparent
-
                       bg-clip-text
 
                       bg-gradient-to-r
 
-                      from-emerald-300
-                      via-emerald-400
-                      to-teal-300
+                      from-emerald-600
+                      via-emerald-500
+                      to-teal-500
                     "
                   >
                     Qur&apos;ani
@@ -322,17 +309,15 @@ export default function Hero() {
                   max-w-[500px]
 
                   text-[22px]
+                  font-normal
+                  leading-[1.22]
+                  tracking-[-0.025em]
+
+                  text-[#365548]
+
                   sm:text-[25px]
                   md:text-[28px]
                   lg:text-[30px]
-
-                  leading-[1.22]
-
-                  tracking-[-0.025em]
-
-                  font-normal
-
-                  text-white/80
                 "
               >
                 untuk masa depan yang penuh keberkahan.
@@ -348,12 +333,12 @@ export default function Hero() {
                   max-w-[540px]
 
                   text-[13px]
-                  sm:text-[14px]
-                  md:text-[15px]
-
                   leading-7
 
-                  text-white/72
+                  text-[#4e695f]
+
+                  sm:text-[14px]
+                  md:text-[15px]
                 "
               >
                 Salurkan infak, sedekah, wakaf, dan dukungan
@@ -372,9 +357,9 @@ export default function Hero() {
 
                   flex
                   flex-col
-                  sm:flex-row
-
                   gap-3
+
+                  sm:flex-row
                 "
               >
                 {/* PRIMARY */}
@@ -385,33 +370,28 @@ export default function Hero() {
                     relative
 
                     inline-flex
+                    min-h-[50px]
                     items-center
                     justify-center
-
                     gap-2.5
 
-                    min-h-[50px]
-
-                    px-6
-
+                    overflow-hidden
                     rounded-xl
 
-                    overflow-hidden
-
                     bg-emerald-500
-                    hover:bg-emerald-400
-
-                    text-[#03291c]
+                    px-6
 
                     text-sm
                     font-bold
+                    text-white
 
-                    shadow-[0_12px_30px_rgba(16,185,129,0.18)]
+                    shadow-[0_14px_32px_rgba(16,185,129,0.18)]
 
                     transition-all
                     duration-300
 
                     hover:-translate-y-0.5
+                    hover:bg-emerald-600
                   "
                 >
                   <span
@@ -419,18 +399,17 @@ export default function Hero() {
                       absolute
                       inset-0
 
-                      bg-gradient-to-r
+                      -translate-x-[140%]
 
+                      bg-gradient-to-r
                       from-transparent
                       via-white/20
                       to-transparent
 
-                      -translate-x-[140%]
-
-                      group-hover:translate-x-[140%]
-
                       transition-transform
                       duration-1000
+
+                      group-hover:translate-x-[140%]
                     "
                   />
 
@@ -439,8 +418,8 @@ export default function Hero() {
                       relative
                       z-10
 
-                      w-[18px]
                       h-[18px]
+                      w-[18px]
                     "
                   />
 
@@ -453,8 +432,8 @@ export default function Hero() {
                       relative
                       z-10
 
-                      w-4
                       h-4
+                      w-4
 
                       transition-transform
                       duration-300
@@ -471,42 +450,42 @@ export default function Hero() {
                     group
 
                     inline-flex
+                    min-h-[50px]
                     items-center
                     justify-center
-
                     gap-2.5
-
-                    min-h-[50px]
-
-                    px-6
 
                     rounded-xl
 
-                    bg-white/[0.09]
-                    hover:bg-white/[0.15]
-
-                    backdrop-blur-xl
-
                     border
-                    border-white/[0.14]
+                    border-white/95
 
-                    text-white
+                    bg-white/72
+
+                    px-6
 
                     text-sm
                     font-semibold
+                    text-[#26483b]
+
+                    backdrop-blur-xl
+
+                    shadow-[0_10px_24px_rgba(15,23,42,0.05)]
 
                     transition-all
                     duration-300
+
+                    hover:bg-white
                   "
                 >
                   Lihat Program
 
                   <ArrowRight
                     className="
-                      w-4
                       h-4
+                      w-4
 
-                      text-white/70
+                      text-[#4c6c60]
 
                       transition-transform
                       duration-300
@@ -527,40 +506,40 @@ export default function Hero() {
                   flex
                   flex-wrap
                   items-center
-
                   gap-x-5
                   gap-y-3
 
                   text-[11px]
-                  sm:text-xs
+                  text-[#5a7469]
 
-                  text-white/60
+                  sm:text-xs
                 "
               >
                 <div className="flex items-center gap-2">
                   <span
                     className="
                       flex
+                      h-7
+                      w-7
                       items-center
                       justify-center
 
-                      w-7
-                      h-7
-
                       rounded-lg
 
-                      bg-white/[0.08]
-
                       border
-                      border-white/10
+                      border-white/90
+
+                      bg-white/75
+
+                      shadow-sm
                     "
                   >
                     <ShieldCheck
                       className="
-                        w-3.5
                         h-3.5
+                        w-3.5
 
-                        text-emerald-300
+                        text-emerald-600
                       "
                     />
                   </span>
@@ -574,26 +553,27 @@ export default function Hero() {
                   <span
                     className="
                       flex
+                      h-7
+                      w-7
                       items-center
                       justify-center
 
-                      w-7
-                      h-7
-
                       rounded-lg
 
-                      bg-white/[0.08]
-
                       border
-                      border-white/10
+                      border-white/90
+
+                      bg-white/75
+
+                      shadow-sm
                     "
                   >
                     <Sparkles
                       className="
-                        w-3.5
                         h-3.5
+                        w-3.5
 
-                        text-emerald-300
+                        text-emerald-600
                       "
                     />
                   </span>
@@ -613,58 +593,54 @@ export default function Hero() {
         ===================================================== */}
         <div
           className="
-            hidden
-            xl:block
-
             absolute
-
             right-6
             bottom-6
-
             z-20
 
-            w-[250px]
+            hidden
+            w-[255px]
 
             rounded-[20px]
 
             border
-            border-white/[0.13]
+            border-white/95
 
-            bg-[#05140e]/55
-
-            backdrop-blur-xl
+            bg-white/72
 
             p-4
 
-            shadow-[0_20px_50px_rgba(0,0,0,0.22)]
+            shadow-[0_20px_45px_rgba(15,23,42,0.12)]
+
+            backdrop-blur-xl
+
+            xl:block
           "
         >
           <div className="flex items-center gap-3">
             <div
               className="
                 flex
+                h-10
+                w-10
+                shrink-0
                 items-center
                 justify-center
 
-                w-10
-                h-10
-
-                shrink-0
-
                 rounded-xl
 
-                bg-emerald-400/15
-
                 border
-                border-emerald-300/15
+                border-emerald-100
+
+                bg-emerald-50
               "
             >
               <HeartHandshake
                 className="
-                  w-5
                   h-5
+                  w-5
 
-                  text-emerald-300
+                  text-emerald-600
                 "
               />
             </div>
@@ -673,12 +649,10 @@ export default function Hero() {
               <p
                 className="
                   text-[9px]
-
+                  uppercase
                   tracking-[0.12em]
 
-                  uppercase
-
-                  text-white/45
+                  text-gray-400
                 "
               >
                 Kebaikan Bersama
@@ -689,10 +663,9 @@ export default function Hero() {
                   mt-0.5
 
                   text-[13px]
-
                   font-semibold
 
-                  text-white
+                  text-[#233b31]
                 "
               >
                 Amal yang terus mengalir
@@ -706,17 +679,16 @@ export default function Hero() {
 
               h-px
 
-              bg-white/10
+              bg-gray-200
             "
           />
 
           <p
             className="
               text-[11px]
-
               leading-5
 
-              text-white/55
+              text-[#5a7469]
             "
           >
             Setiap dukungan Anda ikut membantu pendidikan,
@@ -727,26 +699,23 @@ export default function Hero() {
 
         {/* =====================================================
             SOFT BOTTOM SHADE
-            Bukan gelombang, hanya gradasi tipis
+            Putih transparan halus
         ===================================================== */}
         <div
           className="
-            absolute
+            pointer-events-none
 
+            absolute
             bottom-0
             left-0
-
             z-10
 
-            w-full
             h-20
+            w-full
 
             bg-gradient-to-t
-
-            from-[#03110b]/30
+            from-white/45
             to-transparent
-
-            pointer-events-none
           "
         />
       </div>
