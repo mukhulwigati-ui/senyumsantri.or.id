@@ -439,12 +439,14 @@ export default function HomeCarousel() {
 
               rounded-[26px]
 
-              border-[4px]
+              border-[5px]
               border-white
+
+              sm:border-[6px]
 
               bg-gray-100
 
-              shadow-[0_18px_55px_rgba(15,23,42,0.12)]
+              shadow-[0_20px_60px_rgba(15,23,42,0.16)]
 
               sm:aspect-[16/7]
 
@@ -502,14 +504,15 @@ export default function HomeCarousel() {
 
             rounded-[26px]
 
-            border-[4px]
+            border-[5px]
             border-white
 
-            md:border-[5px]
+            sm:border-[6px]
+            md:border-[7px]
 
             bg-gray-100
 
-            shadow-[0_20px_60px_rgba(15,23,42,0.18)]
+            shadow-[0_24px_70px_rgba(15,23,42,0.22),0_8px_24px_rgba(15,23,42,0.10)]
 
             ring-1
             ring-black/5
