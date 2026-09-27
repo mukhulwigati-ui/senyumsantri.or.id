@@ -5,7 +5,23 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+
 import Link from 'next/link';
+
+import {
+  Eye,
+  Search,
+} from 'lucide-react';
+
+// ============================================================================
+// IDENTITAS WEBSITE
+// ============================================================================
+
+const SITE_NAME =
+  'senyumsantri.or.id';
+
+const PONDOK_NAME =
+  'Pondok Matan Darussalam';
 
 // ============================================================================
 // TYPES
@@ -28,16 +44,23 @@ interface CampaignItem {
   image?: string;
 
   collected?: string;
-
   collectedRaw?: number;
 
   target?: string;
-
   targetAmount?: number;
+
+  views?: number;
 }
 
 interface CampaignProps {
   initialData?: CampaignItem[];
+}
+
+interface ProgramsApiResponse {
+  success?: boolean;
+  data?: unknown;
+  message?: string;
+  error?: string;
 }
 
 // ============================================================================
@@ -57,7 +80,7 @@ function safeString(
 ): string {
   if (
     typeof value === 'string' &&
-    value.trim()
+    value.trim().length > 0
   ) {
     return value.trim();
   }
@@ -81,13 +104,31 @@ function getSlug(
   if (
     value &&
     typeof value === 'object' &&
-    typeof value.current ===
-      'string'
+    typeof value.current === 'string'
   ) {
     return value.current.trim();
   }
 
   return '';
+}
+
+// ============================================================================
+// NUMBER HELPER
+// ============================================================================
+
+function toFiniteNumber(
+  value: unknown
+): number {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+    return 0;
+  }
+
+  return number;
 }
 
 // ============================================================================
@@ -98,13 +139,7 @@ function rupiah(
   value: unknown
 ): string {
   const number =
-    Number(value);
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return 'Rp 0';
-  }
+    toFiniteNumber(value);
 
   return new Intl.NumberFormat(
     'id-ID',
@@ -115,6 +150,74 @@ function rupiah(
       maximumFractionDigits: 0,
     }
   ).format(number);
+}
+
+// ============================================================================
+// FORMAT VIEWS
+// ============================================================================
+
+function formatViews(
+  value: unknown
+): string {
+  const views =
+    Math.max(
+      0,
+      Math.trunc(
+        toFiniteNumber(value)
+      )
+    );
+
+  return new Intl.NumberFormat(
+    'id-ID'
+  ).format(views);
+}
+
+// ============================================================================
+// VALIDASI ITEM API
+// ============================================================================
+
+function isCampaignItem(
+  value: unknown
+): value is CampaignItem {
+  if (
+    !value ||
+    typeof value !== 'object'
+  ) {
+    return false;
+  }
+
+  const item =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  const slug =
+    item.slug;
+
+  const hasSlug =
+    typeof slug === 'string'
+      ? slug.trim().length > 0
+      : Boolean(
+          slug &&
+          typeof slug === 'object' &&
+          typeof (
+            slug as Record<
+              string,
+              unknown
+            >
+          ).current === 'string' &&
+          String(
+            (
+              slug as Record<
+                string,
+                unknown
+              >
+            ).current
+          ).trim().length > 0
+        );
+
+  return hasSlug;
 }
 
 // ============================================================================
@@ -170,22 +273,10 @@ export default function Campaign({
   // ==========================================================================
   // FETCH PROGRAM
   // ==========================================================================
-  //
-  // PENTING:
-  //
-  // useEffect sengaja hanya dijalankan sekali saat mount.
-  //
-  // Jangan menggunakan:
-  //
-  // }, [initialData]);
-  //
-  // karena initialData kosong bisa menyebabkan effect berjalan berulang.
-  //
-  // ==========================================================================
 
   useEffect(() => {
-    // Jika data dari server sudah tersedia,
-    // tidak perlu fetch lagi.
+    // Jika initialData dari server tersedia,
+    // tidak perlu fetch ulang di browser.
 
     if (
       Array.isArray(initialData) &&
@@ -206,31 +297,32 @@ export default function Campaign({
     async function fetchPrograms() {
       try {
         setLoading(true);
-
         setError('');
 
         const response =
           await fetch(
-            '/api/programs',
+            `/api/programs?v=${Date.now()}`,
             {
               method: 'GET',
-
-              headers: {
-                Accept:
-                  'application/json',
-              },
 
               cache:
                 'no-store',
 
               signal:
                 controller.signal,
+
+              headers: {
+                Accept:
+                  'application/json',
+
+                'Cache-Control':
+                  'no-cache, no-store, must-revalidate',
+
+                Pragma:
+                  'no-cache',
+              },
             }
           );
-
-        // ================================================================
-        // RESPONSE ERROR
-        // ================================================================
 
         if (!response.ok) {
           throw new Error(
@@ -238,30 +330,22 @@ export default function Campaign({
           );
         }
 
-        // ================================================================
-        // JSON
-        // ================================================================
-
         const json =
-          await response.json();
-
-        // ================================================================
-        // VALIDASI RESPONSE
-        // ================================================================
+          (await response.json()) as ProgramsApiResponse;
 
         if (
-          !json?.success
+          json.success !== true
         ) {
           throw new Error(
-            json?.message ||
-              json?.error ||
-              'API program mengembalikan status gagal.'
+            json.message ||
+            json.error ||
+            'API program mengembalikan status gagal.'
           );
         }
 
         if (
           !Array.isArray(
-            json?.data
+            json.data
           )
         ) {
           throw new Error(
@@ -269,22 +353,24 @@ export default function Campaign({
           );
         }
 
+        const validPrograms =
+          json.data.filter(
+            isCampaignItem
+          );
+
         setPrograms(
-          json.data
+          validPrograms
         );
       } catch (err) {
-        // Abort bukan error sebenarnya.
-
         if (
           err instanceof Error &&
-          err.name ===
-            'AbortError'
+          err.name === 'AbortError'
         ) {
           return;
         }
 
         console.error(
-          '[Campaign] Fetch programs error:',
+          `[${SITE_NAME}] Campaign fetch error:`,
           err
         );
 
@@ -295,8 +381,7 @@ export default function Campaign({
         );
       } finally {
         if (
-          !controller.signal
-            .aborted
+          !controller.signal.aborted
         ) {
           setLoading(false);
         }
@@ -309,6 +394,7 @@ export default function Campaign({
       controller.abort();
     };
 
+    // initialData sengaja tidak dijadikan dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -340,6 +426,15 @@ export default function Campaign({
         'SEMUA',
         ...Array.from(
           categories
+        ).sort(
+          (
+            a,
+            b
+          ) =>
+            a.localeCompare(
+              b,
+              'id'
+            )
         ),
       ];
     }, [programs]);
@@ -377,7 +472,12 @@ export default function Campaign({
             !search ||
             title.includes(
               search
-            );
+            ) ||
+            category
+              .toLowerCase()
+              .includes(
+                search
+              );
 
           return (
             matchesCategory &&
@@ -397,18 +497,49 @@ export default function Campaign({
 
   if (loading) {
     return (
-      <div className="py-16 md:py-20 flex items-center justify-center">
+      <div
+        className="
+          flex
+          items-center
+          justify-center
 
-        <div className="text-center space-y-3">
+          py-16
 
-          <div className="w-7 h-7 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin mx-auto" />
+          md:py-20
+        "
+      >
+        <div className="space-y-3 text-center">
 
-          <p className="text-gray-400 font-bold text-[11px] uppercase tracking-wider">
+          <div
+            className="
+              mx-auto
+              h-7
+              w-7
+
+              animate-spin
+
+              rounded-full
+
+              border-2
+              border-gray-200
+              border-t-emerald-600
+            "
+          />
+
+          <p
+            className="
+              text-[11px]
+              font-bold
+              uppercase
+              tracking-wider
+
+              text-gray-400
+            "
+          >
             Memuat Program Kebaikan...
           </p>
 
         </div>
-
       </div>
     );
   }
@@ -424,17 +555,41 @@ export default function Campaign({
           FILTER + SEARCH
           ===================================================================== */}
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full border-b border-gray-100 pb-4">
+      <div
+        className="
+          flex
+          w-full
+          flex-col
+
+          gap-4
+
+          border-b
+          border-gray-100
+
+          pb-4
+
+          md:flex-row
+          md:items-center
+          md:justify-between
+        "
+      >
 
         {/* ===================================================================
             CATEGORY FILTER
             =================================================================== */}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className="
+            flex
+            flex-wrap
+            items-center
+
+            gap-2
+          "
+        >
 
           {availableCategories.map(
             (category) => (
-
               <button
                 key={category}
                 type="button"
@@ -443,19 +598,48 @@ export default function Campaign({
                     category
                   )
                 }
-                className={`px-4 py-2.5 rounded-none text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                aria-pressed={
                   selectedCategory ===
                   category
-                    ? 'bg-emerald-600 text-white border-emerald-600 font-black'
-                    : 'bg-white text-gray-400 hover:text-emerald-600 border-gray-200 hover:border-emerald-200'
-                }`}
+                }
+                className={`
+                  border
+                  px-3.5
+                  py-2.5
+
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+
+                  transition-all
+                  duration-200
+
+                  ${
+                    selectedCategory ===
+                    category
+                      ? `
+                        border-emerald-600
+                        bg-emerald-600
+                        text-white
+                        shadow-sm
+                      `
+                      : `
+                        border-gray-200
+                        bg-white
+                        text-gray-500
+
+                        hover:border-emerald-200
+                        hover:text-emerald-600
+                      `
+                  }
+                `}
               >
                 {category ===
                 'SEMUA'
                   ? 'Semua'
                   : category}
               </button>
-
             )
           )}
 
@@ -465,15 +649,45 @@ export default function Campaign({
             SEARCH
             =================================================================== */}
 
-        <div className="relative max-w-xs w-full">
+        <div
+          className="
+            relative
+            w-full
 
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">
-            🔍
-          </span>
+            md:max-w-[260px]
+          "
+        >
+
+          <label
+            htmlFor="campaign-search"
+            className="sr-only"
+          >
+            Cari program
+          </label>
+
+          <Search
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+
+              left-3.5
+              top-1/2
+
+              h-3.5
+              w-3.5
+
+              -translate-y-1/2
+
+              text-gray-400
+            "
+            strokeWidth={2.3}
+          />
 
           <input
+            id="campaign-search"
             type="search"
-            placeholder="Cari galang dana..."
+            placeholder="Cari program..."
             value={
               searchQuery
             }
@@ -484,7 +698,35 @@ export default function Campaign({
                 event.target.value
               )
             }
-            className="w-full bg-white border border-gray-200 text-xs font-bold text-gray-700 pl-9 pr-4 py-2.5 rounded-none placeholder-gray-400 focus:outline-none focus:border-emerald-500 shadow-xs transition-all"
+            className="
+              w-full
+
+              border
+              border-gray-200
+
+              bg-white
+
+              py-2.5
+              pl-9
+              pr-4
+
+              text-xs
+              font-semibold
+
+              text-gray-700
+
+              outline-none
+
+              transition-all
+              duration-200
+
+              placeholder:font-medium
+              placeholder:text-gray-400
+
+              focus:border-emerald-400
+              focus:ring-4
+              focus:ring-emerald-500/5
+            "
           />
 
         </div>
@@ -492,13 +734,99 @@ export default function Campaign({
       </div>
 
       {/* =====================================================================
+          RESULT INFO
+          ===================================================================== */}
+
+      {!error &&
+        programs.length > 0 && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+
+              gap-4
+            "
+          >
+
+            <p
+              className="
+                text-[10px]
+                font-semibold
+
+                text-gray-400
+              "
+            >
+              Menampilkan{' '}
+              <strong
+                className="
+                  font-black
+                  text-gray-600
+                "
+              >
+                {filteredPrograms.length}
+              </strong>{' '}
+              program dari {PONDOK_NAME}.
+            </p>
+
+            {(
+              selectedCategory !==
+                'SEMUA' ||
+              searchQuery.trim()
+            ) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(
+                    'SEMUA'
+                  );
+
+                  setSearchQuery('');
+                }}
+                className="
+                  shrink-0
+
+                  text-[10px]
+                  font-bold
+
+                  text-emerald-600
+
+                  transition-colors
+
+                  hover:text-emerald-700
+                "
+              >
+                Reset Filter
+              </button>
+            )}
+
+          </div>
+        )}
+
+      {/* =====================================================================
           ERROR
           ===================================================================== */}
 
       {error && (
-        <div className="border border-red-100 bg-red-50 p-4">
+        <div
+          className="
+            border
+            border-red-100
 
-          <p className="text-xs font-bold text-red-600">
+            bg-red-50
+
+            p-4
+          "
+        >
+
+          <p
+            className="
+              text-xs
+              font-bold
+
+              text-red-600
+            "
+          >
             {error}
           </p>
 
@@ -510,19 +838,64 @@ export default function Campaign({
           ===================================================================== */}
 
       {!error &&
-      filteredPrograms.length ===
-        0 && (
+        filteredPrograms.length ===
+          0 && (
 
-        <div className="text-center py-16 bg-white border border-gray-100">
+          <div
+            className="
+              border
+              border-gray-100
 
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">
-            Tidak ditemukan program
-            galang dana yang cocok.
-          </p>
+              bg-white
 
-        </div>
+              py-16
 
-      )}
+              text-center
+            "
+          >
+
+            <p
+              className="
+                text-xs
+                font-bold
+                uppercase
+                tracking-wider
+
+                text-gray-400
+              "
+            >
+              Tidak ditemukan program
+              yang cocok.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory(
+                  'SEMUA'
+                );
+
+                setSearchQuery('');
+              }}
+              className="
+                mt-4
+
+                text-[11px]
+                font-bold
+
+                text-emerald-600
+
+                transition-colors
+
+                hover:text-emerald-700
+              "
+            >
+              Tampilkan Semua Program
+            </button>
+
+          </div>
+
+        )}
 
       {/* =====================================================================
           GRID CAMPAIGN
@@ -531,7 +904,20 @@ export default function Campaign({
       {filteredPrograms.length >
         0 && (
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        <div
+          className="
+            grid
+            grid-cols-1
+
+            gap-5
+
+            sm:grid-cols-2
+
+            lg:grid-cols-3
+
+            md:gap-6
+          "
+        >
 
           {filteredPrograms.map(
             (
@@ -590,6 +976,57 @@ export default function Campaign({
                 );
 
               // ==============================================================
+              // PROGRESS
+              // ==============================================================
+
+              const collectedRaw =
+                Math.max(
+                  0,
+                  toFiniteNumber(
+                    program.collectedRaw
+                  )
+                );
+
+              const targetRaw =
+                Math.max(
+                  0,
+                  toFiniteNumber(
+                    program.targetAmount
+                  )
+                );
+
+              const progress =
+                targetRaw > 0
+                  ? Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        Math.round(
+                          (
+                            collectedRaw /
+                            targetRaw
+                          ) *
+                            100
+                        )
+                      )
+                    )
+                  : 0;
+
+              // ==============================================================
+              // VIEWS
+              // ==============================================================
+
+              const views =
+                Math.max(
+                  0,
+                  Math.trunc(
+                    toFiniteNumber(
+                      program.views
+                    )
+                  )
+                );
+
+              // ==============================================================
               // KEY
               // ==============================================================
 
@@ -605,7 +1042,7 @@ export default function Campaign({
 
               if (!slug) {
                 console.warn(
-                  '[Campaign] Program tanpa slug:',
+                  `[${SITE_NAME}] Program tanpa slug:`,
                   title
                 );
 
@@ -617,74 +1054,333 @@ export default function Campaign({
               // ==============================================================
 
               return (
-
                 <Link
                   key={key}
                   href={`/campaign/${encodeURIComponent(
                     slug
                   )}`}
                   aria-label={`Buka program ${title}`}
-                  className="group block h-full"
+                  className="
+                    group
+                    block
+                    h-full
+                  "
                 >
 
-                  <article className="h-full bg-white border border-gray-100 p-4 flex flex-col justify-between shadow-xs cursor-pointer transition-all duration-300 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1">
+                  <article
+                    className="
+                      flex
+                      h-full
+                      flex-col
 
-                    <div>
+                      overflow-hidden
 
-                      {/* =====================================================
-                          IMAGE
-                          ===================================================== */}
+                      border
+                      border-gray-100
 
-                      <div className="relative h-40 md:h-44 w-full overflow-hidden bg-gray-100 border-b border-gray-100">
+                      bg-white
 
-                        <img
-                          src={image}
-                          alt={title}
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          onError={(
-                            event
-                          ) => {
-                            event.currentTarget.src =
-                              FALLBACK_IMAGE;
-                          }}
-                        />
+                      shadow-[0_6px_24px_rgba(15,23,42,0.04)]
 
-                        {/* CATEGORY */}
+                      transition-all
+                      duration-300
 
-                        <span className="absolute top-2 left-2 bg-yellow-400 text-gray-900 text-[9px] font-black px-2.5 py-1 uppercase tracking-wide shadow-sm">
-                          {category}
+                      hover:-translate-y-1
+                      hover:border-emerald-200
+                      hover:shadow-[0_14px_38px_rgba(15,23,42,0.09)]
+                    "
+                  >
+
+                    {/* =======================================================
+                        IMAGE
+                        ======================================================= */}
+
+                    <div
+                      className="
+                        relative
+
+                        aspect-[16/10]
+                        w-full
+
+                        overflow-hidden
+
+                        bg-gray-100
+                      "
+                    >
+
+                      <img
+                        src={image}
+                        alt={title}
+                        loading="lazy"
+                        className="
+                          h-full
+                          w-full
+
+                          object-cover
+
+                          transition-transform
+                          duration-500
+
+                          group-hover:scale-[1.04]
+                        "
+                        onError={(
+                          event
+                        ) => {
+                          const element =
+                            event.currentTarget;
+
+                          if (
+                            element.src.endsWith(
+                              FALLBACK_IMAGE
+                            )
+                          ) {
+                            return;
+                          }
+
+                          element.onerror =
+                            null;
+
+                          element.src =
+                            FALLBACK_IMAGE;
+                        }}
+                      />
+
+                      {/* CATEGORY */}
+
+                      <span
+                        className="
+                          absolute
+
+                          left-3
+                          top-3
+
+                          bg-amber-400
+
+                          px-2.5
+                          py-1
+
+                          text-[9px]
+                          font-black
+                          uppercase
+                          tracking-[0.08em]
+
+                          text-gray-900
+
+                          shadow-sm
+                        "
+                      >
+                        {category}
+                      </span>
+
+                      {/* VIEWS */}
+
+                      {views > 0 && (
+                        <span
+                          className="
+                            absolute
+
+                            bottom-3
+                            right-3
+
+                            inline-flex
+                            items-center
+
+                            gap-1.5
+
+                            bg-black/55
+
+                            px-2
+                            py-1
+
+                            text-[9px]
+                            font-bold
+
+                            text-white
+
+                            backdrop-blur-sm
+                          "
+                        >
+                          <Eye
+                            aria-hidden="true"
+                            className="
+                              h-3
+                              w-3
+                            "
+                            strokeWidth={2.2}
+                          />
+
+                          {formatViews(
+                            views
+                          )}
                         </span>
+                      )}
 
-                        {/* HOVER */}
+                      <div
+                        className="
+                          pointer-events-none
+                          absolute
+                          inset-0
 
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/[0.04] transition-colors duration-300 pointer-events-none" />
+                          bg-gradient-to-t
+                          from-black/[0.08]
+                          via-transparent
+                          to-transparent
+                        "
+                      />
 
-                      </div>
+                    </div>
 
-                      {/* =====================================================
-                          TITLE
-                          ===================================================== */}
+                    {/* =======================================================
+                        CONTENT
+                        ======================================================= */}
 
-                      <h2 className="font-black text-gray-800 mt-3 text-sm uppercase leading-snug line-clamp-2 min-h-[2.5rem] tracking-tight group-hover:text-emerald-600 transition-colors">
+                    <div
+                      className="
+                        flex
+                        flex-1
+                        flex-col
+
+                        p-4
+                      "
+                    >
+
+                      {/* TITLE */}
+
+                      <h2
+                        className="
+                          line-clamp-2
+                          min-h-[2.7rem]
+
+                          text-[14px]
+                          font-extrabold
+                          leading-[1.45]
+
+                          tracking-[-0.015em]
+
+                          text-gray-800
+
+                          transition-colors
+
+                          group-hover:text-emerald-600
+                        "
+                      >
                         {title}
                       </h2>
+
+                      {/* PROGRESS */}
+
+                      <div className="mt-4">
+
+                        <div
+                          className="
+                            h-1.5
+                            overflow-hidden
+
+                            bg-gray-100
+                          "
+                        >
+                          <div
+                            className="
+                              h-full
+
+                              bg-emerald-500
+
+                              transition-all
+                              duration-500
+                            "
+                            style={{
+                              width:
+                                `${progress}%`,
+                            }}
+                          />
+                        </div>
+
+                        <div
+                          className="
+                            mt-2
+                            flex
+                            items-center
+                            justify-between
+
+                            gap-3
+                          "
+                        >
+
+                          <span
+                            className="
+                              text-[9px]
+                              font-semibold
+                              uppercase
+                              tracking-[0.08em]
+
+                              text-gray-400
+                            "
+                          >
+                            Progress
+                          </span>
+
+                          <span
+                            className="
+                              text-[10px]
+                              font-black
+
+                              text-emerald-600
+                            "
+                          >
+                            {progress}%
+                          </span>
+
+                        </div>
+
+                      </div>
 
                       {/* =====================================================
                           FUND INFO
                           ===================================================== */}
 
-                      <div className="grid grid-cols-2 gap-3 text-[10px] text-gray-400 font-bold mt-4 border-t border-gray-100 pt-3">
+                      <div
+                        className="
+                          mt-4
+
+                          grid
+                          grid-cols-2
+
+                          gap-3
+
+                          border-t
+                          border-gray-100
+
+                          pt-3
+                        "
+                      >
 
                         {/* COLLECTED */}
 
                         <div>
 
-                          <p className="uppercase tracking-wider">
+                          <p
+                            className="
+                              text-[9px]
+                              font-bold
+                              uppercase
+                              tracking-wider
+
+                              text-gray-400
+                            "
+                          >
                             Terkumpul
                           </p>
 
-                          <p className="font-black text-emerald-600 text-xs mt-1">
+                          <p
+                            className="
+                              mt-1
+
+                              text-xs
+                              font-black
+
+                              text-emerald-600
+                            "
+                          >
                             {collected}
                           </p>
 
@@ -694,11 +1390,29 @@ export default function Campaign({
 
                         <div className="text-right">
 
-                          <p className="uppercase tracking-wider">
+                          <p
+                            className="
+                              text-[9px]
+                              font-bold
+                              uppercase
+                              tracking-wider
+
+                              text-gray-400
+                            "
+                          >
                             Target
                           </p>
 
-                          <p className="font-black text-gray-700 text-xs mt-1">
+                          <p
+                            className="
+                              mt-1
+
+                              text-xs
+                              font-black
+
+                              text-gray-700
+                            "
+                          >
                             {target}
                           </p>
 
@@ -706,23 +1420,42 @@ export default function Campaign({
 
                       </div>
 
-                    </div>
+                      {/* =====================================================
+                          BUTTON LOOK
+                          ===================================================== */}
 
-                    {/* =======================================================
-                        BUTTON LOOK
-                        ======================================================= */}
+                      <div
+                        className="
+                          mt-auto
+                          pt-5
+                        "
+                      >
 
-                    <div className="mt-4 pt-3 border-t border-gray-100">
+                        <div
+                          className="
+                            w-full
 
-                      {/*
-                        Seluruh card sudah menjadi Link.
+                            bg-emerald-600
 
-                        Jadi bagian ini cukup DIV,
-                        jangan membuat Link di dalam Link.
-                      */}
+                            py-2.5
 
-                      <div className="w-full text-center bg-emerald-600 group-hover:bg-emerald-700 text-white font-black py-2.5 transition-colors text-[10px] uppercase tracking-widest shadow-xs">
-                        Infak Sekarang ➔
+                            text-center
+
+                            text-[10px]
+                            font-black
+                            uppercase
+                            tracking-[0.12em]
+
+                            text-white
+
+                            transition-colors
+
+                            group-hover:bg-emerald-700
+                          "
+                        >
+                          Infak Sekarang →
+                        </div>
+
                       </div>
 
                     </div>

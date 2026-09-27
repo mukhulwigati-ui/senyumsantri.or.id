@@ -9,7 +9,13 @@ import ViewCounter from '@/components/ViewCounter';
 // IDENTITAS WEBSITE
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
+const SITE_NAME = 'senyumsantri.or.id';
+
+const PONDOK_NAME =
+  'Pondok Matan Darussalam';
+
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
 
 const FALLBACK_IMAGE = '/images/placeholder.jpg';
 
@@ -50,6 +56,39 @@ function safeMoney(value: unknown): number {
   }
 
   return number;
+}
+
+// ============================================================================
+// PROGRAM SLUG
+// ============================================================================
+
+function getProgramSlug(
+  value: unknown
+): string {
+  if (
+    typeof value === 'string'
+  ) {
+    return value.trim();
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'current' in value
+  ) {
+    const current =
+      (value as {
+        current?: unknown;
+      }).current;
+
+    if (
+      typeof current === 'string'
+    ) {
+      return current.trim();
+    }
+  }
+
+  return '';
 }
 
 // ============================================================================
@@ -117,7 +156,7 @@ const portableTextComponents = {
         typeof value?.alt === 'string' &&
         value.alt.trim()
           ? value.alt.trim()
-          : `Dokumentasi ${SITE_NAME}`;
+          : `Dokumentasi ${PONDOK_NAME}`;
 
       const caption =
         typeof value?.caption === 'string' &&
@@ -570,7 +609,7 @@ function EmbeddedZakatCalculator({
             }
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-2 uppercase tracking-wider disabled:bg-gray-300"
           >
-            Masukkan ke Form 📥
+            Masukkan ke Form
           </button>
 
         </div>
@@ -768,14 +807,17 @@ function DonationFormFields({
       >
         {submitting
           ? 'Memproses...'
-          : 'Tunaikan Sekarang 🚀'}
+          : 'Tunaikan Sekarang'}
       </button>
 
       <p className="text-[9px] leading-relaxed text-center text-gray-400">
-        Transaksi donasi
-        diproses melalui{' '}
+        Transaksi donasi diproses melalui{' '}
         <span className="font-bold text-gray-500">
           {SITE_NAME}
+        </span>{' '}
+        untuk program{' '}
+        <span className="font-bold text-gray-500">
+          {PONDOK_NAME}
         </span>
         .
       </p>
@@ -927,8 +969,9 @@ export default function CampaignDetailClient({
         const found =
           programs.find(
             (item: any) =>
-              item?.slug ===
-              slug
+              getProgramSlug(
+                item?.slug
+              ) === slug
           ) || null;
 
         setProgram(
@@ -1146,9 +1189,12 @@ export default function CampaignDetailClient({
     // PROGRAM
     // ------------------------------------------------------------------------
 
-    if (
-      !program?.slug
-    ) {
+    const programSlug =
+      getProgramSlug(
+        program?.slug
+      );
+
+    if (!programSlug) {
       alert(
         'Data program belum siap. Silakan muat ulang halaman.'
       );
@@ -1173,7 +1219,7 @@ export default function CampaignDetailClient({
             body:
               JSON.stringify({
                 slug:
-                  program.slug,
+                  programSlug,
 
                 amount:
                   numericAmount,
@@ -1333,7 +1379,7 @@ export default function CampaignDetailClient({
       }
 
       alert(
-        `Pendaftaran fundraiser ${SITE_NAME} berhasil. Silakan periksa WhatsApp untuk informasi berikutnya.`
+        `Pendaftaran fundraiser ${PONDOK_NAME} berhasil. Silakan periksa WhatsApp untuk informasi berikutnya.`
       );
 
       setFundraiserData({
@@ -1499,7 +1545,11 @@ export default function CampaignDetailClient({
 
           <header className="text-left">
 
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em] mb-2">
+            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.18em] mb-1">
+              {PONDOK_NAME}
+            </p>
+
+            <p className="text-[10px] font-semibold text-gray-400 mb-2">
               {SITE_NAME}
             </p>
 
@@ -1561,7 +1611,7 @@ export default function CampaignDetailClient({
               }
               alt={
                 program.title ||
-                `Program ${SITE_NAME}`
+                `Program ${PONDOK_NAME}`
               }
               loading="eager"
               className="w-full h-full object-cover"
@@ -1659,7 +1709,7 @@ export default function CampaignDetailClient({
                   <div className="bg-emerald-50/40 p-1 border border-dashed border-emerald-600/30">
 
                     <p className="text-[11px] font-black text-emerald-800 uppercase tracking-widest px-4 pt-3">
-                      🧮 Simulasi
+                      Simulasi
                       Kalkulator Zakat
                     </p>
 
@@ -2119,9 +2169,9 @@ export default function CampaignDetailClient({
               true
             )
           }
-          className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest py-3.5 shadow-md shadow-red-100 transition-colors"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-widest py-3.5 shadow-md shadow-emerald-100 transition-colors"
         >
-          Donasi Sekarang 🚀
+          Donasi Sekarang
         </button>
 
         {/* FUNDRAISER */}
@@ -2285,10 +2335,11 @@ export default function CampaignDetailClient({
               </h2>
 
               <p className="text-[10px] font-medium text-gray-400">
-                Bantu menghimpun
-                dukungan untuk
-                program{' '}
-                {SITE_NAME}.
+                Bantu menghimpun dukungan untuk program{' '}
+                <span className="font-bold text-gray-500">
+                  {PONDOK_NAME}
+                </span>
+                , bagian dari {OFFICIAL_NAME}.
               </p>
 
             </div>
@@ -2382,7 +2433,7 @@ export default function CampaignDetailClient({
               >
                 {fundraiserSubmitting
                   ? 'Mengirim Data...'
-                  : 'Kirim Pengajuan 📢'}
+                  : 'Kirim Pengajuan'}
               </button>
 
             </form>

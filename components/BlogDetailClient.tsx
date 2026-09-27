@@ -11,10 +11,21 @@ import ViewCounter from '@/components/ViewCounter';
 // CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Asyiqul Quran';
-const SITE_URL = 'https://www.asyiq.ponpes.id';
+const SITE_NAME = 'senyumsantri.or.id';
 
-const FALLBACK_IMAGE = '/images/placeholder.jpg';
+const PONDOK_NAME =
+  'Pondok Matan Darussalam';
+
+const OFFICIAL_NAME =
+  'Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak';
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyumsantri.or.id'
+).replace(/\/+$/, '');
+
+const FALLBACK_IMAGE =
+  '/images/placeholder.jpg';
 
 // ============================================================================
 // TYPES
@@ -321,7 +332,7 @@ const portableTextComponents = {
           'string' &&
         value.alt.trim()
           ? value.alt.trim()
-          : `Dokumentasi ${SITE_NAME}`;
+          : `Dokumentasi ${PONDOK_NAME}`;
 
       const caption =
         typeof value?.caption ===
@@ -694,7 +705,7 @@ export default function BlogDetailClient({
   const caption =
     renderSafeString(
       article.caption,
-      `Dokumentasi ${SITE_NAME}`
+      `Dokumentasi ${PONDOK_NAME}`
     );
 
   // ==========================================================================
@@ -778,7 +789,7 @@ export default function BlogDetailClient({
                 Oleh:{' '}
 
                 <strong className="text-emerald-600 font-black">
-                  Admin {SITE_NAME}
+                  Admin {PONDOK_NAME}
                 </strong>
               </span>
 
@@ -850,7 +861,13 @@ export default function BlogDetailClient({
                 onError={(
                   event
                 ) => {
-                  event.currentTarget.src =
+                  const image =
+                    event.currentTarget;
+
+                  image.onerror =
+                    null;
+
+                  image.src =
                     FALLBACK_IMAGE;
                 }}
               />
@@ -951,15 +968,15 @@ export default function BlogDetailClient({
               }`}
             >
               {copied
-                ? '✓ Tautan Disalin'
-                : '🔗 Salin Tautan'}
+                ? 'Tautan Disalin'
+                : 'Salin Tautan'}
             </button>
 
             {/* WHATSAPP */}
 
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
-                `${titleString}\n\n${articleUrl}`
+                `${titleString}\n\nBaca selengkapnya di ${SITE_NAME}:\n${articleUrl}`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -1036,7 +1053,9 @@ export default function BlogDetailClient({
 
                     return (
                       <Link
-                        href={`/campaign/${programSlug}`}
+                        href={`/campaign/${encodeURIComponent(
+                          programSlug
+                        )}`}
                         key={
                           key
                         }
@@ -1107,13 +1126,13 @@ export default function BlogDetailClient({
             <div className="flex flex-wrap gap-2">
 
               {[
-                'Sedekah',
-                'Wakaf',
-                'Yatim',
                 'Al-Quran',
+                'Santri',
                 'Pendidikan',
                 'Pesantren',
-                'Kemanusiaan',
+                'Muhammadiyah',
+                'Dakwah',
+                'Kebaikan',
               ].map(
                 (
                   tag
@@ -1149,8 +1168,9 @@ export default function BlogDetailClient({
               Berita dan informasi resmi dari{' '}
 
               <strong className="text-gray-600">
-                {SITE_NAME}
-              </strong>.
+                {PONDOK_NAME}
+              </strong>
+              , {OFFICIAL_NAME}.
 
             </p>
 
@@ -1162,7 +1182,7 @@ export default function BlogDetailClient({
               rel="noopener noreferrer"
               className="inline-block mt-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700"
             >
-              www.asyiq.ponpes.id
+              {SITE_NAME}
             </a>
 
           </div>

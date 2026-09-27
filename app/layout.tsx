@@ -30,8 +30,16 @@ const geistMono = Geist_Mono({
 // SITE CONFIG
 // ============================================================================
 
-const SITE_NAME = "Pondok Matan Darussalam";
-const SITE_URL = "https://senyum.or.id";
+const SITE_NAME =
+  "Pondok Matan Darussalam";
+
+const SITE_DOMAIN =
+  "senyumsantri.or.id";
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  "https://senyumsantri.or.id"
+).replace(/\/+$/, "");
 
 const OFFICIAL_NAME =
   "Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak";
@@ -40,7 +48,7 @@ const DEFAULT_TITLE =
   "Pondok Matan Darussalam Demak | Pendidikan Kader, Tahfidz & Pesantren Muhammadiyah";
 
 const DEFAULT_DESCRIPTION =
-  "Website resmi Pondok Matan Darussalam, Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak. Pesantren kader dengan pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, dan pengembangan keterampilan santri.";
+  "Website resmi Pondok Matan Darussalam, Pondok Pesantren Darussalam Muhammadiyah Bintoro Demak. Informasi pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, kegiatan santri, serta program kebaikan dan dukungan pendidikan pesantren.";
 
 const OG_IMAGE = `${SITE_URL}/images/og-banner.jpg`;
 
@@ -80,7 +88,7 @@ const serverClient = createClient({
   // Ambil langsung dari Sanity API.
   useCdn: false,
 
-  apiVersion: "2026-09-25",
+  apiVersion: "2026-09-27",
 
   ...(SANITY_READ_TOKEN
     ? {
@@ -118,7 +126,7 @@ export const metadata: Metadata = {
 
   description: DEFAULT_DESCRIPTION,
 
-  applicationName: SITE_NAME,
+  applicationName: `${SITE_NAME} | ${SITE_DOMAIN}`,
 
   manifest: "/manifest.json",
 
@@ -129,7 +137,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Pondok Matan",
+    title: "Pondok Matan Darussalam",
   },
 
   // --------------------------------------------------------------------------
@@ -165,8 +173,11 @@ export const metadata: Metadata = {
     "sedekah pesantren",
     "wakaf pesantren",
     "donasi pendidikan santri",
-    "senyum or id",
-    "senyum.or.id",
+    "senyum santri",
+    "senyum santri Demak",
+    "senyumsantri",
+    "senyumsantri or id",
+    "senyumsantri.or.id",
   ],
 
   // --------------------------------------------------------------------------
@@ -203,7 +214,7 @@ export const metadata: Metadata = {
   //
   // sehingga dapat diakses dari:
   //
-  // https://senyum.or.id/images/og-banner.jpg
+  // https://senyumsantri.or.id/images/og-banner.jpg
   //
   // ==========================================================================
 
@@ -211,7 +222,7 @@ export const metadata: Metadata = {
     title: DEFAULT_TITLE,
 
     description:
-      "Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Mendidik kader yang alim muttaqin, berakhlak mulia, unggul, terampil, dan berkemajuan melalui pendidikan Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, serta pembinaan kemandirian santri.",
+      "Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, pembinaan akhlak, kemandirian santri, serta berbagai program kebaikan pesantren.",
 
     url: SITE_URL,
 
@@ -242,7 +253,7 @@ export const metadata: Metadata = {
     title: DEFAULT_TITLE,
 
     description:
-      "Website resmi Pondok Matan Darussalam Muhammadiyah Bintoro Demak. Pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, dan pembinaan santri.",
+      "Website resmi Pondok Matan Darussalam Muhammadiyah Bintoro Demak melalui senyumsantri.or.id. Pendidikan kader, Al-Qur'an, Bahasa Arab, ilmu syar'i, kitab matan, dan pembinaan santri.",
 
     images: [OG_IMAGE],
   },
