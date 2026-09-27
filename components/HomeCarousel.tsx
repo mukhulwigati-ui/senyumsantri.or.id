@@ -439,7 +439,7 @@ export default function HomeCarousel() {
 
               rounded-[26px]
 
-              border
+              border-[4px]
               border-white
 
               bg-gray-100
@@ -502,12 +502,14 @@ export default function HomeCarousel() {
 
             rounded-[26px]
 
-            border
+            border-[4px]
             border-white
+
+            md:border-[5px]
 
             bg-gray-100
 
-            shadow-[0_18px_55px_rgba(15,23,42,0.16)]
+            shadow-[0_20px_60px_rgba(15,23,42,0.18)]
 
             ring-1
             ring-black/5
