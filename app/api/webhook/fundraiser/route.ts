@@ -2,55 +2,119 @@
 
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // ============================================================================
 // CONFIG
 // ============================================================================
 
-const SITE_NAME = 'Pondok Matan Darussalam';
-const SITE_URL = 'https://www.senyum.or.id';
-const FUNDRAISER_STATS_URL = `${SITE_URL}/fundraiser/stats`;
+const SITE_NAME =
+  'Pondok Matan Darussalam';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  'https://senyumsantri.or.id';
+
+const FUNDRAISER_STATS_URL =
+  `${SITE_URL}/fundraiser/stats`;
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+interface FundraiserWebhookPayload {
+  name?: unknown;
+  phone?: unknown;
+  status?: unknown;
+  programTitle?: unknown;
+}
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-function normalizePhone(phone: string): string {
-  let formatted = phone.replace(/\D/g, '');
+function normalizePhone(
+  value: unknown
+): string {
+  let phone =
+    String(value || '')
+      .replace(/\D/g, '');
+
+  if (!phone) {
+    return '';
+  }
 
   // 0812xxxx -> 62812xxxx
-  if (formatted.startsWith('0')) {
-    formatted = `62${formatted.slice(1)}`;
+  if (phone.startsWith('0')) {
+    phone =
+      `62${phone.slice(1)}`;
   }
 
   // 812xxxx -> 62812xxxx
-  else if (formatted.startsWith('8')) {
-    formatted = `62${formatted}`;
+  else if (phone.startsWith('8')) {
+    phone =
+      `62${phone}`;
   }
 
-  return formatted;
+  return phone;
 }
 
-function isValidPhone(phone: string): boolean {
-  return /^62[0-9]{8,13}$/.test(phone);
+function isValidPhone(
+  phone: string
+): boolean {
+  return /^62[0-9]{8,13}$/.test(
+    phone
+  );
+}
+
+function getDisplayPhone(
+  phone: string
+): string {
+  if (phone.startsWith('62')) {
+    return `0${phone.slice(2)}`;
+  }
+
+  return phone;
+}
+
+function getErrorMessage(
+  error: unknown
+): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Terjadi gangguan internal saat memproses webhook fundraiser.';
 }
 
 // ============================================================================
 // POST WEBHOOK
 // ============================================================================
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
     // =========================================================================
     // 1. PARSE PAYLOAD
     // =========================================================================
 
-    const body = await request.json().catch(() => null);
+    const body =
+      await request
+        .json()
+        .catch(() => null) as
+        FundraiserWebhookPayload | null;
 
-    if (!body || typeof body !== 'object') {
+    if (
+      !body ||
+      typeof body !== 'object'
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Payload webhook tidak valid.',
+          message:
+            'Payload webhook tidak valid.',
         },
         {
           status: 400,
@@ -59,7 +123,7 @@ export async function POST(request: Request) {
     }
 
     // =========================================================================
-    // 2. AMBIL DATA DARI SANITY WEBHOOK
+    // 2. AMBIL DATA
     // =========================================================================
 
     const name =
@@ -74,7 +138,9 @@ export async function POST(request: Request) {
 
     const status =
       typeof body.status === 'string'
-        ? body.status.trim().toLowerCase()
+        ? body.status
+            .trim()
+            .toLowerCase()
         : '';
 
     const programTitle =
@@ -84,15 +150,18 @@ export async function POST(request: Request) {
         : 'Program Kebaikan';
 
     // =========================================================================
-    // 3. HANYA PROSES JIKA STATUS APPROVED
+    // 3. STATUS
     // =========================================================================
 
-    if (status !== 'approved') {
+    if (
+      status !== 'approved'
+    ) {
       return NextResponse.json(
         {
           success: true,
           skipped: true,
-          message: 'Webhook diterima, tetapi status belum approved.',
+          message:
+            `Webhook diterima. Status "${status || '-'}" tidak memerlukan notifikasi.`,
         },
         {
           status: 200,
@@ -108,7 +177,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Nama fundraiser tidak ditemukan.',
+          message:
+            'Nama fundraiser tidak ditemukan.',
         },
         {
           status: 400,
@@ -124,7 +194,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Nomor WhatsApp fundraiser tidak ditemukan.',
+          message:
+            'Nomor WhatsApp fundraiser tidak ditemukan.',
         },
         {
           status: 400,
@@ -132,13 +203,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const phone = normalizePhone(rawPhone);
+    const phone =
+      normalizePhone(
+        rawPhone
+      );
 
-    if (!isValidPhone(phone)) {
+    if (
+      !isValidPhone(
+        phone
+      )
+    ) {
+      console.error(
+        `[${SITE_NAME}] Nomor fundraiser tidak valid:`,
+        rawPhone
+      );
+
       return NextResponse.json(
         {
           success: false,
-          message: 'Nomor WhatsApp fundraiser tidak valid.',
+          message:
+            'Nomor WhatsApp fundraiser tidak valid.',
         },
         {
           status: 400,
@@ -146,11 +230,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const displayPhone =
+      getDisplayPhone(
+        phone
+      );
+
     // =========================================================================
-    // 6. CEK TOKEN FONNTE
+    // 6. CEK FONNTE TOKEN
     // =========================================================================
 
-    const fonnteToken = process.env.FONNTE_TOKEN;
+    const fonnteToken =
+      process.env
+        .FONNTE_TOKEN
+        ?.trim() ||
+      '';
 
     if (!fonnteToken) {
       console.error(
@@ -160,7 +253,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Token WhatsApp belum dikonfigurasi.',
+          message:
+            'Layanan WhatsApp belum dikonfigurasi.',
         },
         {
           status: 500,
@@ -169,7 +263,7 @@ export async function POST(request: Request) {
     }
 
     // =========================================================================
-    // 7. SUSUN PESAN WHATSAPP
+    // 7. PESAN WHATSAPP
     // =========================================================================
 
     const messageText =
@@ -177,81 +271,103 @@ export async function POST(request: Request) {
 
       `Assalamu'alaikum *${name}*,\n\n` +
 
-      `Alhamdulillah, pengajuan Anda sebagai fundraiser untuk program:\n\n` +
+      `Alhamdulillah, pendaftaran Anda sebagai fundraiser untuk program:\n\n` +
 
       `*${programTitle}*\n\n` +
 
       `telah resmi *DISETUJUI & DIAKTIFKAN* oleh admin ${SITE_NAME}.\n\n` +
 
-      `Sekarang Anda dapat mengambil tautan fundraiser pribadi dan memantau perolehan donasi secara transparan melalui halaman resmi berikut:\n\n` +
+      `Anda sekarang dapat mengambil tautan fundraiser pribadi dan memantau perolehan donasi melalui halaman berikut:\n\n` +
 
       `👉 ${FUNDRAISER_STATS_URL}\n\n` +
 
-      `Cukup masukkan nomor WhatsApp yang Anda gunakan saat mendaftar:\n` +
+      `Masukkan nomor WhatsApp yang digunakan saat mendaftar:\n` +
 
-      `*${phone}*\n\n` +
+      `*${displayPhone}*\n\n` +
 
-      `Pada halaman tersebut Anda dapat melihat tautan fundraiser pribadi serta riwayat donasi yang masuk melalui tautan Anda.\n\n` +
+      `Di halaman tersebut Anda dapat melihat tautan fundraiser pribadi, jumlah dana yang berhasil dihimpun, serta perkembangan donasi melalui tautan Anda.\n\n` +
 
-      `Silakan bagikan tautan fundraiser tersebut kepada keluarga, sahabat, dan masyarakat agar semakin banyak yang ikut mendukung program kebaikan ini.\n\n` +
+      `Silakan bagikan tautan fundraiser kepada keluarga, sahabat, dan masyarakat agar semakin banyak yang ikut mendukung program kebaikan ini.\n\n` +
 
-      `Jazakumullahu khairan katsiran atas kontribusi terbaik Anda. 🤲\n\n` +
+      `Jazakumullahu khairan katsiran atas kontribusi dan partisipasi Anda. 🤲\n\n` +
 
       `*${SITE_NAME}*\n` +
       `${SITE_URL}`;
 
     // =========================================================================
-    // 8. KIRIM VIA FONNTE
+    // 8. KIRIM FONNTE
     // =========================================================================
 
-    const resFonnte = await fetch(
-      'https://api.fonnte.com/send',
-      {
-        method: 'POST',
+    const resFonnte =
+      await fetch(
+        'https://api.fonnte.com/send',
+        {
+          method: 'POST',
 
-        headers: {
-          Authorization: fonnteToken,
-          'Content-Type':
-            'application/x-www-form-urlencoded',
-        },
+          headers: {
+            Authorization:
+              fonnteToken,
 
-        body: new URLSearchParams({
-          target: phone,
-          message: messageText,
-        }),
+            'Content-Type':
+              'application/x-www-form-urlencoded',
+          },
 
-        cache: 'no-store',
+          body:
+            new URLSearchParams({
+              target:
+                phone,
+
+              message:
+                messageText,
+            }),
+
+          cache:
+            'no-store',
+        }
+      );
+
+    // =========================================================================
+    // 9. BACA RESPONSE
+    // =========================================================================
+
+    const responseText =
+      await resFonnte
+        .text()
+        .catch(() => '');
+
+    let fonnteResult:
+      unknown =
+      responseText;
+
+    if (responseText) {
+      try {
+        fonnteResult =
+          JSON.parse(
+            responseText
+          );
+      } catch {
+        // Response Fonnte bukan JSON.
+        fonnteResult =
+          responseText;
       }
-    );
-
-    // =========================================================================
-    // 9. BACA RESPONS FONNTE
-    // =========================================================================
-
-    const responseText = await resFonnte
-      .text()
-      .catch(() => '');
-
-    let fonnteResult: unknown = responseText;
-
-    try {
-      fonnteResult = responseText
-        ? JSON.parse(responseText)
-        : null;
-    } catch {
-      // Jika respons bukan JSON, gunakan teks mentah.
     }
 
     // =========================================================================
-    // 10. CEK HASIL FONNTE
+    // 10. CEK RESPONSE HTTP
     // =========================================================================
 
-    if (!resFonnte.ok) {
+    if (
+      !resFonnte.ok
+    ) {
       console.error(
-        `[${SITE_NAME}] Gagal mengirim WA fundraiser:`,
+        `[${SITE_NAME}] Gagal mengirim notifikasi fundraiser:`,
         {
-          status: resFonnte.status,
-          response: fonnteResult,
+          name,
+          phone,
+          status:
+            resFonnte.status,
+          response:
+            fonnteResult,
         }
       );
 
@@ -267,31 +383,97 @@ export async function POST(request: Request) {
       );
     }
 
+    // =========================================================================
+    // 11. VALIDASI RESPONSE FONNTE
+    // =========================================================================
+    //
+    // Sebagian response Fonnte tetap HTTP 200 walaupun mempunyai informasi
+    // kegagalan di JSON. Karena format dapat berubah, kita hanya melakukan
+    // pengecekan sederhana tanpa membuat integrasi terlalu bergantung pada
+    // struktur response tertentu.
+    // =========================================================================
+
+    if (
+      fonnteResult &&
+      typeof fonnteResult === 'object' &&
+      'status' in fonnteResult
+    ) {
+      const resultStatus =
+        (
+          fonnteResult as {
+            status?: unknown;
+          }
+        ).status;
+
+      if (
+        resultStatus === false
+      ) {
+        console.error(
+          `[${SITE_NAME}] Fonnte menolak pengiriman:`,
+          fonnteResult
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              'Notifikasi WhatsApp belum berhasil dikirim.',
+          },
+          {
+            status: 502,
+          }
+        );
+      }
+    }
+
+    // =========================================================================
+    // 12. LOG
+    // =========================================================================
+
     console.log(
       `[${SITE_NAME}] Notifikasi fundraiser berhasil dikirim:`,
       {
         name,
         phone,
         programTitle,
-        response: fonnteResult,
       }
     );
 
     // =========================================================================
-    // 11. SUCCESS
+    // 13. SUCCESS
     // =========================================================================
 
     return NextResponse.json(
       {
         success: true,
+
         message:
           'Webhook fundraiser berhasil diproses dan notifikasi WhatsApp telah dikirim.',
+
+        data: {
+          name,
+          phone:
+            displayPhone,
+
+          programTitle,
+
+          statsUrl:
+            FUNDRAISER_STATS_URL,
+
+          site:
+            SITE_NAME,
+
+          siteUrl:
+            SITE_URL,
+        },
       },
       {
         status: 200,
       }
     );
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     // =========================================================================
     // GLOBAL ERROR
     // =========================================================================
@@ -305,9 +487,9 @@ export async function POST(request: Request) {
       {
         success: false,
         message:
-          error instanceof Error
-            ? error.message
-            : 'Terjadi gangguan internal saat memproses webhook fundraiser.',
+          getErrorMessage(
+            error
+          ),
       },
       {
         status: 500,
