@@ -16,6 +16,8 @@ const client = createClient({
   useCdn: false,
   apiVersion: '2026-09-30',
   token: WRITE_TOKEN || undefined,
+  timeout: 15000,
+  maxRetries: 0,
 });
 
 const METHODS = ['payment_link', 'qris', 'bri_va', 'bni_va', 'cimb_niaga_va',
@@ -57,19 +59,69 @@ function sheetText(value: string): string {
   return /^[=+\-@\t\r\n]/.test(value) ? `'${value}` : value;
 }
 
+type Stage = 'config' | 'input' | 'sanity_create' | 'pakasir_request' |
+  'pakasir_response' | 'sanity_txn_id' | 'payment_validation' | 'payment_url' | 'sanity_finalize';
+
+class CheckoutError extends Error {
+  code: string;
+  constructor(code: string, message: string) { super(message); this.code = code; this.name = 'CheckoutError'; }
+}
+
+function errorStatus(error: unknown): number | null {
+  if (!object(error)) return null;
+  if (typeof error.statusCode === 'number') return error.statusCode;
+  if (typeof error.status === 'number') return error.status;
+  if (object(error.response) && typeof error.response.statusCode === 'number') return error.response.statusCode;
+  return null;
+}
+
+function diagnosis(stage: Stage, error: unknown): { code: string; message: string; status: number } {
+  if (error instanceof CheckoutError) return { code: error.code, message: error.message, status: 502 };
+  const status = errorStatus(error);
+  if (stage.startsWith('sanity_')) {
+    const action = stage === 'sanity_create' ? 'menyimpan pesanan awal' : 'menyimpan data pembayaran';
+    if (status === 401 || status === 403) return {
+      code: 'SANITY_WRITE_DENIED', status: 500,
+      message: `Sanity menolak akses saat ${action}. Periksa SANITY_API_WRITE_TOKEN dan izin Editor pada project/dataset yang dipakai.`,
+    };
+    return { code: stage.toUpperCase(), status: 503,
+      message: `Gagal ${action} ke Sanity${status ? ` (HTTP ${status})` : ''}. Periksa koneksi dan konfigurasi Sanity.` };
+  }
+  if (stage === 'pakasir_request') return { code: 'PAKASIR_CONNECTION_FAILED', status: 502,
+    message: 'Koneksi ke Pakasir gagal atau melewati batas waktu. Pesanan belum terkonfirmasi; hubungi admin dengan nomor pesanan ini.' };
+  if (stage === 'pakasir_response') return { code: 'PAKASIR_INVALID_RESPONSE', status: 502,
+    message: 'Pakasir mengembalikan respons yang tidak dapat dibaca sebagai JSON transaksi v2.' };
+  if (stage === 'config' || stage === 'payment_url') return { code: 'INVALID_SITE_OR_PAYMENT_URL', status: 500,
+    message: 'URL situs atau URL pembayaran tidak valid. Periksa NEXT_PUBLIC_SITE_URL dan respons payment_link.' };
+  return { code: 'CHECKOUT_FAILED', status: 500, message: `Checkout gagal pada tahap ${stage}. Hubungi admin dengan nomor pesanan ini.` };
+}
+
+// Hanya log metadata diagnosis; jangan log token, body donatur, atau QR/VA.
+function logFailure(stage: Stage, error: unknown, orderId: string, code: string) {
+  console.error(`[${SITE_NAME}] Checkout gagal`, {
+    stage, code, orderId: orderId || null, httpStatus: errorStatus(error),
+    errorName: error instanceof Error ? error.name : 'UnknownError',
+  });
+}
+
 export async function POST(request: Request) {
   let documentId = '';
   let orderId = '';
   let gatewayConfirmed = false;
   let gatewayRequested = false;
+  let stage: Stage = 'config';
+  let knownTxnId = '';
+  let localCreated = false;
   try {
     if (!WRITE_TOKEN || !PROJECT || !API_KEY) {
       console.error(`[${SITE_NAME}] Konfigurasi server belum lengkap.`);
-      return fail('Konfigurasi pembayaran server belum lengkap.', 500);
+      const missing = [!WRITE_TOKEN && 'SANITY_API_WRITE_TOKEN', !PROJECT && 'PAKASIR_PROJECT_SLUG', !API_KEY && 'PAKASIR_API_KEY'].filter(Boolean);
+      return fail(`Konfigurasi server belum lengkap: ${missing.join(', ')}. Isi di Vercel lalu redeploy.`, 500);
     }
     const site = new URL(SITE_URL);
     if (!['https:', 'http:'].includes(site.protocol)) return fail('URL situs tidak valid.', 500);
 
+    stage = 'input';
     const body: unknown = await request.json().catch(() => null);
     if (!object(body)) return fail('Format data transaksi tidak valid.');
     const slug = text(body.slug);
@@ -111,14 +163,17 @@ export async function POST(request: Request) {
 
     // Catat dahulu agar transaksi gateway selalu mempunyai pasangan lokal.
     // Status pembayaran tetap pending; creationStatus membedakan proses checkout.
+    stage = 'sanity_create';
     await client.create({
       _id: documentId, _type: 'donationTransaction', orderId,
       pakasirProject: PROJECT, donorName, donorPhone, fundraiserPhone, slug,
       amount, paymentMethod: method, status: 'pending', gatewayStatus: 'pending',
       creationStatus: 'creating', createdAt, createdAtWib,
       siteName: SITE_NAME, siteUrl: site.origin,
-    });
+    }, { visibility: 'sync' });
+    localCreated = true;
     const endpoint = `https://app.pakasir.com/api/v2/create-transaction/${encodeURIComponent(PROJECT)}/${encodeURIComponent(orderId)}`;
+    stage = 'pakasir_request';
     gatewayRequested = true;
     const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Api-Key': API_KEY },
@@ -126,29 +181,40 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) {
-      console.error(`[${SITE_NAME}] Pakasir HTTP ${response.status}; order ${orderId}`);
+      const gatewayCode = `PAKASIR_HTTP_${response.status}`;
+      logFailure(stage, { status: response.status }, orderId, gatewayCode);
+      // Jangan biarkan kegagalan patch menutupi error asli dari Pakasir.
       await client.patch(documentId).set({
         creationStatus: response.status >= 500 ? 'unknown' : 'rejected',
-        gatewayHttpStatus: response.status,
-      }).commit();
-      return fail(response.status === 429
-        ? 'Pakasir sedang membatasi permintaan. Silakan coba beberapa saat lagi.'
-        : 'Pakasir belum berhasil membuat pembayaran. Silakan coba beberapa saat lagi.',
-      response.status === 429 ? 429 : 502);
+        gatewayHttpStatus: response.status, checkoutErrorCode: gatewayCode,
+      }).commit().catch(() => undefined);
+      const message = response.status === 401 || response.status === 403
+        ? 'Pakasir menolak akses. Pastikan PAKASIR_API_KEY berasal dari project yang sama dengan PAKASIR_PROJECT_SLUG, lalu redeploy.'
+        : response.status === 404
+          ? 'Endpoint atau project Pakasir tidak ditemukan. Periksa PAKASIR_PROJECT_SLUG.'
+          : response.status === 429
+            ? 'Batas request Pakasir tercapai (2 request per detik). Tunggu beberapa saat sebelum mencoba lagi.'
+            : `Pakasir menolak pembuatan pembayaran (HTTP ${response.status}). Periksa pengaturan project dan metode pembayaran.`;
+      return NextResponse.json({ success: false, error: message, code: gatewayCode, orderId },
+        { status: response.status === 429 ? 429 : 502, headers: { 'Cache-Control': 'no-store' } });
     }
+    stage = 'pakasir_response';
     const data: unknown = await response.json();
-    if (!object(data) || !text(data.txn_id)) throw new Error('Respons Pakasir tidak memiliki txn_id.');
+    if (!object(data) || !text(data.txn_id)) throw new CheckoutError('PAKASIR_MISSING_TXN_ID', 'Respons Pakasir v2 tidak menyediakan txn_id.');
     const txnId = text(data.txn_id);
+    knownTxnId = txnId;
     // Simpan ID gateway segera, bahkan jika validasi respons selanjutnya gagal.
+    stage = 'sanity_txn_id';
     await client.patch(documentId).set({ txnId, creationStatus: 'verifying' }).commit();
+    stage = 'payment_validation';
     if ((data.project !== undefined && data.project !== PROJECT) ||
         (data.order_id !== undefined && data.order_id !== orderId) ||
         (data.amount !== undefined && data.amount !== amount) ||
         (data.payment_method !== undefined && data.payment_method !== method)) {
-      throw new Error('Identitas transaksi Pakasir tidak cocok.');
+      throw new CheckoutError('PAKASIR_IDENTITY_MISMATCH', 'Project, order_id, amount, atau metode dalam respons Pakasir tidak cocok dengan pesanan.');
     }
     if (data.is_sandbox !== undefined && typeof data.is_sandbox !== 'boolean') {
-      throw new Error('is_sandbox tidak valid.');
+      throw new CheckoutError('PAKASIR_SANDBOX_INVALID', 'Respons is_sandbox dari Pakasir bukan boolean.');
     }
     const qrString = text(data.qr_string);
     const vaNumber = text(data.va_number);
@@ -157,22 +223,25 @@ export async function POST(request: Request) {
     let expiredAt: string | null = null;
     let isSandbox: boolean | null = null;
     if (method !== 'payment_link') {
-      if (!money(data.fee) || !money(data.total_payment) ||
-          data.amount !== amount || data.total_payment !== amount + data.fee ||
-          data.project !== PROJECT || data.order_id !== orderId ||
-          data.payment_method !== method || typeof data.is_sandbox !== 'boolean') {
-        throw new Error('Detail pembayaran Pakasir tidak valid.');
+      // Identitas telah dibandingkan di atas; validasi setiap field secara terpisah.
+      if (!money(data.fee)) throw new CheckoutError('PAKASIR_FEE_INVALID', 'Respons fee dari Pakasir tidak valid atau tidak tersedia.');
+      if (!money(data.total_payment)) throw new CheckoutError('PAKASIR_TOTAL_INVALID', 'Respons total_payment dari Pakasir tidak valid atau tidak tersedia.');
+      if (data.total_payment !== amount + data.fee) throw new CheckoutError('PAKASIR_TOTAL_MISMATCH', 'Total pembayaran Pakasir tidak sama dengan nominal ditambah biaya.');
+      if (data.amount !== amount || data.project !== PROJECT || data.order_id !== orderId || data.payment_method !== method) {
+        throw new CheckoutError('PAKASIR_DETAILS_MISSING', 'Respons QRIS/VA Pakasir tidak menyediakan identitas transaksi lengkap sesuai API v2.');
       }
+      if (typeof data.is_sandbox !== 'boolean') throw new CheckoutError('PAKASIR_SANDBOX_MISSING', 'Respons QRIS/VA Pakasir tidak menyediakan is_sandbox.');
       if ((method === 'qris' && !qrString) || (method.endsWith('_va') && !vaNumber)) {
-        throw new Error('QRIS atau nomor virtual account tidak tersedia.');
+        throw new CheckoutError('PAKASIR_PAYMENT_DATA_MISSING', 'Pakasir tidak menyediakan qr_string untuk QRIS atau va_number untuk virtual account.');
       }
       expiredAt = text(data.expired_at);
-      if (!expiredAt || !Number.isFinite(Date.parse(expiredAt))) throw new Error('Waktu kedaluwarsa tidak valid.');
+      if (!expiredAt || !Number.isFinite(Date.parse(expiredAt))) throw new CheckoutError('PAKASIR_EXPIRY_INVALID', 'expired_at dalam respons Pakasir tidak tersedia atau tidak valid.');
       fee = data.fee;
       totalAmount = data.total_payment;
       isSandbox = data.is_sandbox;
     }
 
+    stage = 'payment_url';
     const returnUrl = new URL('/thank-you', site);
     returnUrl.searchParams.set('order_id', orderId);
     // payment_link menggunakan URL resmi dari respons.
@@ -183,7 +252,7 @@ export async function POST(request: Request) {
     if (payment.protocol !== 'https:' || payment.hostname !== 'app.pakasir.com' ||
         payment.port || payment.username || payment.password ||
         payment.pathname !== `/pay-v2/${encodeURIComponent(txnId)}`) {
-      throw new Error('URL pembayaran Pakasir tidak valid.');
+      throw new CheckoutError('PAKASIR_URL_INVALID', 'URL pembayaran yang dikembalikan tidak cocok dengan domain atau ID transaksi Pakasir.');
     }
     payment.searchParams.set('redirect', returnUrl.toString());
     if (method === 'qris' || (method === 'payment_link' && body.qrisOnly === true)) {
@@ -191,6 +260,7 @@ export async function POST(request: Request) {
     }
     const paymentUrl = payment.toString();
     // Jangan set status di sini: webhook mungkin telah lebih dulu mencatat lunas.
+    stage = 'sanity_finalize';
     await client.patch(documentId).set({
       txnId, fee, totalAmount, paymentUrl, qrString, vaNumber, expiredAt, isSandbox,
       creationStatus: 'created',
@@ -223,18 +293,20 @@ export async function POST(request: Request) {
       paymentNumber: vaNumber,
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error: unknown) {
-    console.error(`[${SITE_NAME}] Checkout gagal; order ${orderId || '-'};`,
-      error instanceof Error ? error.name : 'UnknownError');
-    if (documentId && !gatewayConfirmed) {
+    const result = diagnosis(stage, error);
+    logFailure(stage, error, orderId, result.code);
+    if (localCreated && !gatewayConfirmed) {
       await client.patch(documentId).set({
+        ...(knownTxnId ? { txnId: knownTxnId } : {}),
         creationStatus: gatewayRequested ? 'unknown' : 'failed',
+        checkoutErrorCode: result.code, checkoutErrorStage: stage,
       }).commit().catch(() => undefined);
     }
-    // Timeout tidak membuktikan transaksi gagal di gateway. Jangan hapus data lokal.
     return NextResponse.json({
-      success: false,
-      error: 'Transaksi belum dapat disiapkan. Jika pembayaran sudah dilakukan, jangan membayar ulang; hubungi admin.',
+      success: false, error: result.message, code: result.code, stage,
       ...(orderId ? { orderId } : {}),
-    }, { status: 502, headers: { 'Cache-Control': 'no-store' } });
+      // ID untuk rekonsiliasi admin; tidak mengembalikan QR/VA saat penyimpanan gagal.
+      ...(knownTxnId ? { txnId: knownTxnId } : {}),
+    }, { status: result.status, headers: { 'Cache-Control': 'no-store' } });
   }
 }
