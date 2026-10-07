@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@sanity/client';
 import { google } from 'googleapis';
+import { timingSafeEqual } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +31,8 @@ const SANITY_WRITE_TOKEN =
 const PAKASIR_WEBHOOK_SECRET =
   process.env.PAKASIR_WEBHOOK_SECRET?.trim() ||
   '';
+
+const PAKASIR_PROJECT_SLUG = process.env.PAKASIR_PROJECT_SLUG?.trim() || '';
 
 // ============================================================================
 // SANITY CLIENT
@@ -66,6 +69,10 @@ interface DonationTransaction {
   paymentMethod?: string;
 
   fundraiserPhone?: string;
+  pakasirProject?: string;
+  isSandbox?: boolean | null;
+  sheetSyncStatus?: string;
+  whatsappReceiptStatus?: string;
 }
 
 interface ProgramDocument {
@@ -84,11 +91,13 @@ interface FundraiserDocument {
 // ============================================================================
 
 function safeNumber(value: unknown): number {
-  const parsed = Number(value);
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : 0;
+}
 
-  return Number.isFinite(parsed)
-    ? parsed
-    : 0;
+function validSecret(incoming: string, expected: string): boolean {
+  const a = Buffer.from(incoming, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 function normalizePhone(value: unknown): string {
@@ -185,7 +194,7 @@ async function appendToGoogleSheets(data: {
         `[${SITE_NAME}] Google Sheets dilewati karena ENV belum lengkap.`
       );
 
-      return;
+      return 'skipped' as const;
     }
 
     const auth =
@@ -214,11 +223,6 @@ async function appendToGoogleSheets(data: {
         data.phone
       );
 
-    const whatsappFormula =
-      cleanPhone
-        ? `=HYPERLINK("https://wa.me/${cleanPhone}"; "${data.phone}")`
-        : '-';
-
     await sheets.spreadsheets.values.append({
       spreadsheetId,
 
@@ -226,7 +230,7 @@ async function appendToGoogleSheets(data: {
         'Sheet1!A:G',
 
       valueInputOption:
-        'USER_ENTERED',
+        'RAW',
 
       requestBody: {
         values: [
@@ -235,22 +239,21 @@ async function appendToGoogleSheets(data: {
             data.orderId,
             data.txnId,
             data.name,
-            whatsappFormula,
+            cleanPhone ? `https://wa.me/${cleanPhone}` : '-',
             data.amount,
             data.program,
           ],
         ],
       },
-    });
+    }, { timeout: 10000 });
 
-    console.log(
-      `📊 [${SITE_NAME}] Google Sheets sukses: ${data.orderId}`
-    );
+    return 'sent' as const;
   } catch (error) {
     console.error(
       `🔥 [${SITE_NAME}] GOOGLE SHEETS ERROR:`,
-      error
+      error instanceof Error ? error.name : 'UnknownError'
     );
+    return 'failed' as const;
   }
 }
 
@@ -277,7 +280,7 @@ async function sendWhatsappReceipt(data: {
         `[${SITE_NAME}] FONNTE_TOKEN belum dikonfigurasi.`
       );
 
-      return;
+      return 'skipped' as const;
     }
 
     const phone =
@@ -286,7 +289,7 @@ async function sendWhatsappReceipt(data: {
       );
 
     if (!phone) {
-      return;
+      return 'skipped' as const;
     }
 
     const messageText = `*DONASI BERHASIL DITERIMA* 🎉
@@ -329,37 +332,20 @@ _Amanah dalam menyalurkan kebaikan_`;
 
           cache:
             'no-store',
+          signal: AbortSignal.timeout(10000),
         }
       );
 
-    if (!response.ok) {
-      const responseText =
-        await response
-          .text()
-          .catch(() => '');
-
-      console.error(
-        `🔥 [${SITE_NAME}] FONNTE ERROR:`,
-        {
-          status:
-            response.status,
-
-          response:
-            responseText,
-        }
-      );
-
-      return;
+    const result: unknown = await response.json().catch(() => null);
+    if (!response.ok || !result || typeof result !== 'object' ||
+        !('status' in result) || result.status !== true) {
+      console.error(`[${SITE_NAME}] Fonnte gagal; order ${data.orderId}; HTTP ${response.status}`);
+      return 'failed' as const;
     }
-
-    console.log(
-      `📲 [${SITE_NAME}] WhatsApp terkirim: ${data.orderId}`
-    );
-  } catch (error) {
-    console.error(
-      `🔥 [${SITE_NAME}] FONNTE ERROR:`,
-      error
-    );
+    return 'sent' as const;
+  } catch {
+    console.error(`[${SITE_NAME}] Fonnte gagal; order ${data.orderId}`);
+    return 'failed' as const;
   }
 }
 
@@ -392,7 +378,7 @@ export async function POST(
       );
     }
 
-    if (!PAKASIR_WEBHOOK_SECRET) {
+    if (!PAKASIR_WEBHOOK_SECRET || !PAKASIR_PROJECT_SLUG) {
       console.error(
         `[${SITE_NAME}] PAKASIR_WEBHOOK_SECRET belum dikonfigurasi.`
       );
@@ -421,8 +407,7 @@ export async function POST(
 
     if (
       !incomingSecret ||
-      incomingSecret !==
-        PAKASIR_WEBHOOK_SECRET
+      !validSecret(incomingSecret, PAKASIR_WEBHOOK_SECRET)
     ) {
       console.error(
         `❌ [${SITE_NAME}] Webhook ditolak: X-Secret tidak cocok.`
@@ -452,7 +437,7 @@ export async function POST(
     if (
       !payload ||
       typeof payload !==
-        'object'
+        'object' || Array.isArray(payload)
     ) {
       return NextResponse.json(
         {
@@ -466,41 +451,18 @@ export async function POST(
       );
     }
 
-    const txnId =
-      String(
-        payload.txn_id ||
-        ''
-      ).trim();
-
-    const orderId =
-      String(
-        payload.order_id ||
-        ''
-      ).trim();
-
-    const amount =
-      safeNumber(
-        payload.amount
-      );
-
-    const status =
-      String(
-        payload.status ||
-        ''
-      )
-        .toLowerCase()
-        .trim();
-
-    const completedAt =
-      String(
-        payload.completed_at ||
-        ''
-      ).trim();
-
-    const isSandbox =
-      Boolean(
-        payload.is_sandbox
-      );
+    const txnId = typeof payload.txn_id === 'string' ? payload.txn_id.trim() : '';
+    const orderId = typeof payload.order_id === 'string' ? payload.order_id.trim() : '';
+    const amount = safeNumber(payload.amount);
+    const status = typeof payload.status === 'string' ? payload.status : '';
+    const completedAt = typeof payload.completed_at === 'string' ? payload.completed_at.trim() : '';
+    if (typeof payload.is_sandbox !== 'boolean' ||
+        !['pending', 'completed', 'canceled'].includes(status) ||
+        txnId.length > 200 || orderId.length > 200 ||
+        (status === 'completed' && (!completedAt || !Number.isFinite(Date.parse(completedAt))))) {
+      return NextResponse.json({ success: false, message: 'Payload webhook tidak valid.' }, { status: 400 });
+    }
+    const isSandbox: boolean = payload.is_sandbox;
 
     console.log(
       `📥 [${SITE_NAME}] PAKASIR V2 WEBHOOK:`,
@@ -584,38 +546,19 @@ export async function POST(
     // 6. CARI TRANSAKSI DI SANITY
     // ========================================================================
 
-    const transaction =
-      await client.fetch<
-        DonationTransaction | null
-      >(
-        `
-        *[
-          _type == "donationTransaction"
-          &&
-          (
-            txnId == $txnId
-            ||
-            orderId == $orderId
-          )
-        ][0]{
-          _id,
-          _rev,
-          txnId,
-          orderId,
-          donorName,
-          donorPhone,
-          amount,
-          status,
-          slug,
-          paymentMethod,
-          fundraiserPhone
-        }
-        `,
-        {
-          txnId,
-          orderId,
-        }
-      );
+    // Cari berdasarkan order lokal, lalu cocokkan seluruh identitas.
+    // Ambil dua hasil supaya order lokal ganda tidak diproses secara ambigu.
+    const matches = await client.fetch<DonationTransaction[]>(
+      `*[_type == "donationTransaction" && orderId == $orderId][0...2]{
+        _id, _rev, txnId, orderId, donorName, donorPhone, amount, status,
+        slug, paymentMethod, fundraiserPhone, pakasirProject, isSandbox,
+        sheetSyncStatus, whatsappReceiptStatus
+      }`, { orderId }
+    );
+    if (matches.length > 1) {
+      return NextResponse.json({ success: false, message: 'Order lokal ganda; perlu pemeriksaan admin.' }, { status: 409 });
+    }
+    const transaction = matches[0] || null;
 
     if (!transaction) {
       console.error(
@@ -632,6 +575,11 @@ export async function POST(
           status: 404,
         }
       );
+    }
+
+    if (transaction.pakasirProject !== PAKASIR_PROJECT_SLUG ||
+        (typeof transaction.isSandbox === 'boolean' && transaction.isSandbox !== isSandbox)) {
+      return NextResponse.json({ success: false, message: 'Project atau mode transaksi tidak cocok.' }, { status: 400 });
     }
 
     // ========================================================================
@@ -749,7 +697,7 @@ export async function POST(
       localStatus ===
         'success' ||
       localStatus ===
-        'completed'
+        'completed' || localStatus === 'sandbox_completed'
     ) {
       console.log(
         `ℹ️ [${SITE_NAME}] Transaksi sudah diproses: ${orderId}`
@@ -765,6 +713,20 @@ export async function POST(
           status: 200,
         }
       );
+    }
+
+    // Sandbox disimpan untuk audit, tanpa menambah donasi, ujrah, Sheet, atau kuitansi WA.
+    if (isSandbox) {
+      try {
+        await client.patch(transaction._id).ifRevisionId(transaction._rev).set({
+          txnId, status: 'sandbox_completed', gatewayStatus: 'completed',
+          completedAt: new Date(completedAt).toISOString(), isSandbox: true,
+          sheetSyncStatus: 'skipped', whatsappReceiptStatus: 'skipped',
+        }).commit({ visibility: 'sync' });
+      } catch {
+        return NextResponse.json({ success: false, message: 'Data berubah; ulangi webhook.' }, { status: 503 });
+      }
+      return NextResponse.json({ success: true, message: 'Transaksi sandbox dicatat tanpa menambah saldo.' }, { status: 200 });
     }
 
     // ========================================================================
@@ -905,9 +867,7 @@ export async function POST(
         }
       );
 
-    const completedAtIso =
-      completedAt ||
-      new Date().toISOString();
+    const completedAtIso = new Date(completedAt).toISOString();
 
     // ========================================================================
     // 14. FUNDRAISER
@@ -1018,6 +978,9 @@ export async function POST(
 
               isSandbox:
                 isSandbox,
+
+              sheetSyncStatus: 'pending',
+              whatsappReceiptStatus: donorPhone ? 'pending' : 'skipped',
             })
       );
 
@@ -1173,7 +1136,7 @@ export async function POST(
         );
       }
 
-      throw commitError;
+      return NextResponse.json({ success: false, message: 'Pencatatan belum selesai; ulangi webhook.' }, { status: 503 });
     }
 
     console.log(
@@ -1192,7 +1155,7 @@ export async function POST(
     // 17. GOOGLE SHEETS
     // ========================================================================
 
-    await appendToGoogleSheets({
+    const sheetResult = await appendToGoogleSheets({
       date:
         `${currentDate} ${currentTime}`,
 
@@ -1220,10 +1183,11 @@ export async function POST(
     // 18. WHATSAPP
     // ========================================================================
 
+    let whatsappResult: 'sent' | 'failed' | 'skipped' = 'skipped';
     if (
       donorPhone
     ) {
-      await sendWhatsappReceipt({
+      whatsappResult = await sendWhatsappReceipt({
         phone:
           donorPhone,
 
@@ -1250,6 +1214,14 @@ export async function POST(
           currentTime,
       });
     }
+
+    // Catat kegagalan layanan tambahan untuk ditindaklanjuti admin.
+    // Tidak mengulangi append/kirim otomatis: timeout dapat terjadi setelah layanan menerimanya.
+    await client.patch(transaction._id).set({
+      sheetSyncStatus: sheetResult, whatsappReceiptStatus: whatsappResult,
+    }).commit().catch(() => {
+      console.error(`[${SITE_NAME}] Status layanan tambahan belum tersimpan; order ${orderId}`);
+    });
 
     // ========================================================================
     // 19. RESPONSE 200
@@ -1301,9 +1273,7 @@ export async function POST(
           false,
 
         error:
-          getErrorMessage(
-            error
-          ),
+          'Webhook belum berhasil diproses. Silakan ulangi permintaan.',
       },
       {
         status: 500,
