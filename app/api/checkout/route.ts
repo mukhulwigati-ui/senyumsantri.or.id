@@ -226,7 +226,9 @@ export async function POST(request: Request) {
       // Identitas telah dibandingkan di atas; validasi setiap field secara terpisah.
       if (!money(data.fee)) throw new CheckoutError('PAKASIR_FEE_INVALID', 'Respons fee dari Pakasir tidak valid atau tidak tersedia.');
       if (!money(data.total_payment)) throw new CheckoutError('PAKASIR_TOTAL_INVALID', 'Respons total_payment dari Pakasir tidak valid atau tidak tersedia.');
-      if (data.total_payment !== amount + data.fee) throw new CheckoutError('PAKASIR_TOTAL_MISMATCH', 'Total pembayaran Pakasir tidak sama dengan nominal ditambah biaya.');
+      // Gunakan total_payment resmi dari Pakasir. Panduan v2 tidak menjamin
+      // total_payment selalu sama dengan amount + fee.
+      if (data.total_payment <= 0) throw new CheckoutError('PAKASIR_TOTAL_INVALID', 'Total pembayaran Pakasir harus lebih dari nol.');
       if (data.amount !== amount || data.project !== PROJECT || data.order_id !== orderId || data.payment_method !== method) {
         throw new CheckoutError('PAKASIR_DETAILS_MISSING', 'Respons QRIS/VA Pakasir tidak menyediakan identitas transaksi lengkap sesuai API v2.');
       }
