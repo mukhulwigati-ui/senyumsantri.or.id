@@ -236,8 +236,13 @@ export async function POST(request: Request) {
       if ((method === 'qris' && !qrString) || (method.endsWith('_va') && !vaNumber)) {
         throw new CheckoutError('PAKASIR_PAYMENT_DATA_MISSING', 'Pakasir tidak menyediakan qr_string untuk QRIS atau va_number untuk virtual account.');
       }
-      expiredAt = text(data.expired_at);
-      if (!expiredAt || !Number.isFinite(Date.parse(expiredAt))) throw new CheckoutError('PAKASIR_EXPIRY_INVALID', 'expired_at dalam respons Pakasir tidak tersedia atau tidak valid.');
+      // Waktu kedaluwarsa bukan bukti pembayaran. Jangan membuat waktu pengganti.
+      const rawExpiry = text(data.expired_at);
+      const parsedExpiry = rawExpiry ? Date.parse(rawExpiry) : NaN;
+      expiredAt = Number.isFinite(parsedExpiry) ? new Date(parsedExpiry).toISOString() : null;
+      if (expiredAt === null) {
+        console.warn(`[${SITE_NAME}] Waktu kedaluwarsa tidak tersedia; order ${orderId}`);
+      }
       fee = data.fee;
       totalAmount = data.total_payment;
       isSandbox = data.is_sandbox;
