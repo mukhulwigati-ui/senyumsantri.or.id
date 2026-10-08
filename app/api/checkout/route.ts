@@ -265,11 +265,14 @@ export async function POST(request: Request) {
     if (method === 'qris' || (method === 'payment_link' && body.qrisOnly === true)) {
       payment.searchParams.set('qris_only', '1');
     }
-    const paymentUrl = payment.toString();
+    const gatewayPaymentUrl = payment.toString();
+    const internalPayment = new URL('/payment', site);
+    internalPayment.searchParams.set('order_id', orderId);
+    const paymentUrl = method === 'payment_link' ? gatewayPaymentUrl : internalPayment.toString();
     // Jangan set status di sini: webhook mungkin telah lebih dulu mencatat lunas.
     stage = 'sanity_finalize';
     await client.patch(documentId).set({
-      txnId, fee, totalAmount, paymentUrl, qrString, vaNumber, expiredAt, isSandbox,
+      txnId, fee, totalAmount, paymentUrl, gatewayPaymentUrl, qrString, vaNumber, expiredAt, isSandbox,
       creationStatus: 'created',
     }).commit();
     gatewayConfirmed = true;

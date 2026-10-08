@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { PortableText } from '@portabletext/react';
 
 import ViewCounter from '@/components/ViewCounter';
@@ -56,6 +56,47 @@ function safeMoney(value: unknown): number {
   }
 
   return number;
+}
+
+const PAYMENT_METHODS = [
+  { value: 'qris', label: 'QRIS (E-Wallet & M-Banking)' },
+  { value: 'payment_link', label: 'Pilih metode di halaman Pakasir' },
+  { value: 'bri_va', label: 'BRI Virtual Account' },
+  { value: 'bni_va', label: 'BNI Virtual Account' },
+  { value: 'cimb_niaga_va', label: 'CIMB Niaga Virtual Account' },
+  { value: 'permata_va', label: 'Permata Virtual Account' },
+  { value: 'maybank_va', label: 'Maybank Virtual Account' },
+  { value: 'bnc_va', label: 'Bank Neo Commerce Virtual Account' },
+  { value: 'artha_graha_va', label: 'Artha Graha Virtual Account' },
+  { value: 'sampoerna_va', label: 'Sahabat Sampoerna Virtual Account' },
+] as const;
+
+function paymentLimits(method: string) {
+  return { minimum: method === 'qris' || method === 'payment_link' ? 500 : 10000,
+    maximum: method === 'qris' ? 10000000 : 50000000 };
+}
+
+function parseDonationAmount(value: string): number | null {
+  if (!/^\d+$/.test(value) && !/^\d{1,3}(?:\.\d{3})+$/.test(value)) return null;
+  const result = Number(value.replace(/\./g, ''));
+  return Number.isSafeInteger(result) && result > 0 ? result : null;
+}
+
+function validPaymentUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value, window.location.origin);
+    const internal = url.origin === window.location.origin && url.pathname === '/payment' && !!url.searchParams.get('order_id');
+    const gateway = url.protocol === 'https:' && url.hostname === 'app.pakasir.com' &&
+      !url.port && !url.username && !url.password && /^\/pay-v2\/[^/]+$/.test(url.pathname);
+    // Canonical www/non-www memakai origin yang sedang dibuka.
+    const canonical = ['senyumsantri.or.id', 'www.senyumsantri.or.id'].includes(window.location.hostname) &&
+      ['senyumsantri.or.id', 'www.senyumsantri.or.id'].includes(url.hostname) &&
+      url.protocol === 'https:' && !url.port && !url.username && !url.password &&
+      url.pathname === '/payment' && !!url.searchParams.get('order_id');
+    if (canonical) return `${window.location.origin}${url.pathname}${url.search}`;
+    return internal || gateway ? url.toString() : null;
+  } catch { return null; }
 }
 
 // ============================================================================
@@ -251,7 +292,7 @@ const portableTextComponents = {
           ? value.href.trim()
           : '';
 
-      if (!href) {
+      if (!href || (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href) && !/^tel:/i.test(href) && !href.startsWith('#') && !(href.startsWith('/') && !href.startsWith('//')))) {
         return children;
       }
 
@@ -654,6 +695,7 @@ interface FormProps {
     () => Promise<void>;
 
   submitting: boolean;
+  checkoutError: string;
 }
 
 // ============================================================================
@@ -671,6 +713,7 @@ function DonationFormFields({
   handleAmountChange,
   handleDonate,
   submitting,
+  checkoutError,
 }: FormProps) {
   return (
     <div className="space-y-4 text-left">
@@ -685,6 +728,8 @@ function DonationFormFields({
         <input
           type="text"
           autoComplete="name"
+          maxLength={150}
+          disabled={submitting}
           placeholder="Hamba Allah (Boleh Kosong)"
           className="w-full border border-gray-200 px-3.5 py-2.5 text-xs text-gray-700 focus:outline-emerald-500 font-medium"
           value={donorName}
@@ -707,6 +752,8 @@ function DonationFormFields({
           type="tel"
           inputMode="tel"
           autoComplete="tel"
+          maxLength={40}
+          disabled={submitting}
           placeholder="Contoh: 081234567890"
           className="w-full border border-gray-200 px-3.5 py-2.5 text-xs text-gray-700 focus:outline-emerald-500 font-medium"
           value={donorPhone}
@@ -726,6 +773,7 @@ function DonationFormFields({
         </label>
 
         <select
+          disabled={submitting}
           className="w-full border border-gray-200 px-3.5 py-2.5 text-xs text-gray-700 focus:outline-emerald-500 font-bold bg-white cursor-pointer"
           value={
             paymentMethod
@@ -736,37 +784,9 @@ function DonationFormFields({
             )
           }
         >
-          <option value="qris">
-            🟢 QRIS (E-Wallet &
-            M-Banking)
-          </option>
-
-          <option value="bri_va">
-            🏦 BRI Virtual Account
-          </option>
-
-          <option value="bni_va">
-            🏦 BNI Virtual Account
-          </option>
-
-          <option value="cimb_niaga_va">
-            🏦 CIMB Niaga Virtual
-            Account
-          </option>
-
-          <option value="permata_va">
-            🏦 Permata Virtual
-            Account
-          </option>
-
-          <option value="maybank_va">
-            🏦 Maybank Virtual
-            Account
-          </option>
-
-          <option value="atm_bersama_va">
-            🌐 ATM Bersama
-          </option>
+          {PAYMENT_METHODS.map((method) => (
+            <option key={method.value} value={method.value}>{method.label}</option>
+          ))}
         </select>
       </div>
 
@@ -786,7 +806,8 @@ function DonationFormFields({
           <input
             type="text"
             inputMode="numeric"
-            placeholder="Minimal 1.000"
+            disabled={submitting}
+            placeholder={`Minimal ${paymentLimits(paymentMethod).minimum.toLocaleString('id-ID')}`}
             className="w-full border border-gray-200 pl-9 pr-3.5 py-2.5 text-xs font-bold text-gray-800 focus:outline-emerald-500"
             value={amount}
             onChange={
@@ -796,6 +817,15 @@ function DonationFormFields({
 
         </div>
       </div>
+
+      <p className="text-xs text-gray-500">
+        Minimal Rp {paymentLimits(paymentMethod).minimum.toLocaleString('id-ID')} · Maksimal Rp {paymentLimits(paymentMethod).maximum.toLocaleString('id-ID')}
+      </p>
+      {checkoutError && (
+        <div role="alert" className="border border-red-200 bg-red-50 p-3 text-sm leading-relaxed text-red-800 whitespace-pre-line break-words">
+          {checkoutError}
+        </div>
+      )}
 
       {/* BUTTON */}
 
@@ -893,6 +923,9 @@ export default function CampaignDetailClient({
     'donatur' |
     'laporan'
   >('cerita');
+
+  const [checkoutError, setCheckoutError] = useState('');
+  const checkoutLock = useRef(false);
 
   // ==========================================================================
   // FUNDRAISER MODAL
@@ -1142,144 +1175,58 @@ export default function CampaignDetailClient({
   // ==========================================================================
 
   async function handleDonate() {
-    const cleanAmount =
-      amount.replace(
-        /\./g,
-        ''
-      );
-
-    const numericAmount =
-      Number(cleanAmount);
-
-    // ------------------------------------------------------------------------
-    // AMOUNT VALIDATION
-    // ------------------------------------------------------------------------
-
-    if (
-      !cleanAmount ||
-      !Number.isFinite(
-        numericAmount
-      ) ||
-      numericAmount < 1000
-    ) {
-      alert(
-        'Masukkan nominal minimal Rp 1.000.'
-      );
-
-      return;
+    if (checkoutLock.current) return;
+    setCheckoutError('');
+    const numericAmount = parseDonationAmount(amount);
+    const limits = paymentLimits(paymentMethod);
+    if (!PAYMENT_METHODS.some((method) => method.value === paymentMethod)) {
+      setCheckoutError('Pilih metode pembayaran yang tersedia.'); return;
     }
-
-    // ------------------------------------------------------------------------
-    // PHONE
-    // ------------------------------------------------------------------------
-
-    if (
-      !isValidPhone(
-        donorPhone
-      )
-    ) {
-      alert(
-        'Nomor WhatsApp tidak valid. Gunakan 9–15 digit angka.'
-      );
-
-      return;
+    if (numericAmount === null || numericAmount < limits.minimum || numericAmount > limits.maximum) {
+      setCheckoutError(`Nominal harus antara Rp ${limits.minimum.toLocaleString('id-ID')} dan Rp ${limits.maximum.toLocaleString('id-ID')}.`); return;
     }
-
-    // ------------------------------------------------------------------------
-    // PROGRAM
-    // ------------------------------------------------------------------------
-
-    const programSlug =
-      getProgramSlug(
-        program?.slug
-      );
-
+    if (!isValidPhone(donorPhone)) {
+      setCheckoutError('Nomor WhatsApp tidak valid. Gunakan 9–15 digit angka.'); return;
+    }
+    const programSlug = getProgramSlug(program?.slug);
     if (!programSlug) {
-      alert(
-        'Data program belum siap. Silakan muat ulang halaman.'
-      );
-
-      return;
+      setCheckoutError('Data program belum siap. Silakan muat ulang halaman.'); return;
     }
-
+    const referralValue = isValidReferral(referral) ? referral.trim() : '';
+    const fundraiserPhone = /^[+\d\s().-]+$/.test(referralValue) ? cleanPhone(referralValue) : '';
+    checkoutLock.current = true;
     setSubmitting(true);
-
+    let redirecting = false;
     try {
-      const response =
-        await fetch(
-          '/api/checkout',
-          {
-            method: 'POST',
-
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
-
-            body:
-              JSON.stringify({
-                slug:
-                  programSlug,
-
-                amount:
-                  numericAmount,
-
-                donorName:
-                  donorName.trim() ||
-                  'Hamba Allah',
-
-                donorPhone:
-                  cleanPhone(
-                    donorPhone
-                  ),
-
-                paymentMethod,
-
-                referral:
-                  isValidReferral(
-                    referral
-                  )
-                    ? referral.trim()
-                    : null,
-              }),
-          }
-        );
-
-      const json =
-        await response
-          .json()
-          .catch(
-            () => ({})
-          );
-
-      if (
-        !response.ok ||
-        !json?.success ||
-        !json?.paymentUrl
-      ) {
-        throw new Error(
-          json?.error ||
-            json?.message ||
-            'Gagal membuat tautan pembayaran.'
-        );
+      const response = await fetch('/api/checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ slug: programSlug, amount: numericAmount,
+          donorName: donorName.trim() || 'Hamba Allah', donorPhone: cleanPhone(donorPhone),
+          paymentMethod, fundraiserPhone, referral: referralValue || null }),
+        cache: 'no-store', signal: AbortSignal.timeout(90000),
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok || json?.success !== true) {
+        const message = typeof json?.error === 'string' ? json.error
+          : typeof json?.message === 'string' ? json.message
+          : `Server belum berhasil membuat pembayaran (HTTP ${response.status}).`;
+        const invoice = typeof json?.orderId === 'string' ? `\nNo. pesanan: ${json.orderId}` : '';
+        const uncertain = json?.txnId || json?.code === 'PAKASIR_CONNECTION_FAILED';
+        throw new Error(`${message}${invoice}${uncertain ? '\nJika sudah membayar, jangan membayar ulang. Hubungi admin dengan nomor pesanan tersebut.' : ''}`);
       }
-
-      window.location.assign(
-        json.paymentUrl
-      );
-    } catch (error) {
-      console.error(
-        `[${SITE_NAME}] Checkout error:`,
-        error
-      );
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'Terjadi kesalahan saat memproses pembayaran.'
-      );
+      const paymentUrl = validPaymentUrl(json.paymentUrl);
+      if (!paymentUrl) throw new Error('Tautan pembayaran tidak valid. Hubungi admin sebelum mencoba transaksi lagi.');
+      window.location.assign(paymentUrl);
+      redirecting = true;
+    } catch (error: unknown) {
+      const timeout = error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
+      setCheckoutError(timeout
+        ? 'Waktu tunggu habis. Pesanan mungkin sudah dibuat. Periksa Pakasir atau hubungi admin sebelum mencoba kembali.'
+        : error instanceof TypeError
+          ? 'Koneksi terputus. Pesanan mungkin sudah dibuat; periksa pembayaran atau hubungi admin sebelum mencoba kembali.'
+          : error instanceof Error ? error.message : 'Pembayaran belum dapat diproses.');
     } finally {
-      setSubmitting(false);
+      if (!redirecting) { checkoutLock.current = false; setSubmitting(false); }
     }
   }
 
@@ -1923,7 +1870,7 @@ export default function CampaignDetailClient({
 
                             {typeof report.content ===
                             'string' ? (
-                              <p>
+                              <p className="whitespace-pre-line leading-7">
                                 {
                                   report.content
                                 }
@@ -2054,6 +2001,7 @@ export default function CampaignDetailClient({
               submitting={
                 submitting
               }
+              checkoutError={checkoutError}
             />
 
           </div>
@@ -2283,6 +2231,7 @@ export default function CampaignDetailClient({
               submitting={
                 submitting
               }
+              checkoutError={checkoutError}
             />
 
           </div>
